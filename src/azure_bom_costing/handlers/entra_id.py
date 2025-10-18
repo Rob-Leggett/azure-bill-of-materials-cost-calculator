@@ -1,8 +1,8 @@
 from decimal import Decimal
 from typing import List, Dict, Optional
 
-from .common import _per_count_from_text, _arm_region, _text_fields
-from ..pricing_sources import d, retail_fetch_items
+from ..helpers import _d, _per_count_from_text, _arm_region, _text_fields
+from ..pricing_sources import retail_fetch_items
 from ..types import Key
 
 # ---------- Entra External ID (MAU) ----------
@@ -21,13 +21,13 @@ def _pick_entra_external_id_row(items: List[dict], want_mfa: bool = False) -> Op
             s += 2
         if "per user" in txt or "1 user" in (i.get("unitOfMeasure","") or "").lower():
             s += 2
-        if d(i.get("retailPrice", 0)) > 0:
+        if _d(i.get("retailPrice", 0)) > 0:
             s += 1
         else:
             s -= 50
         return s
 
-    items = [i for i in items if d(i.get("retailPrice", 0)) > 0]
+    items = [i for i in items if _d(i.get("retailPrice", 0)) > 0]
     if not items:
         return None
     return sorted(items, key=score, reverse=True)[0]
@@ -45,11 +45,11 @@ def price_entra_external_id(component, region, currency, ent_prices: Dict[Key, D
         "mfa_unit_override": null        # optional AUD/MAU override for MFA
       }
     """
-    mau = d(component.get("monthly_active_users", 0))
+    mau = _d(component.get("monthly_active_users", 0))
     if mau <= 0:
-        return d(0), "Entra External ID (0 MAU)"
+        return _d(0), "Entra External ID (0 MAU)"
 
-    mfa_pct = d(component.get("mfa_enabled_pct", 0))
+    mfa_pct = _d(component.get("mfa_enabled_pct", 0))
     premium  = bool(component.get("premium_features", False))
     base_override = component.get("unit_price_override")
     mfa_override  = component.get("mfa_unit_override")
@@ -61,11 +61,11 @@ def price_entra_external_id(component, region, currency, ent_prices: Dict[Key, D
 
     if base_override is not None and (mfa_pct <= 0 or mfa_override is not None):
         # All prices provided — no retail lookup needed
-        base_unit = d(base_override)
+        base_unit = _d(base_override)
         total = base_unit * mau
         details = [f"base:{mau} @ {base_unit}/MAU"]
         if mfa_pct > 0:
-            mfa_unit = d(mfa_override or 0)
+            mfa_unit = _d(mfa_override or 0)
             total += mfa_unit * (mau * mfa_pct)
             details.append(f"mfa:{int(mfa_pct*100)}% @ {mfa_unit}/MAU")
         return total, "Entra External ID " + " ".join(details)
@@ -92,10 +92,10 @@ def price_entra_external_id(component, region, currency, ent_prices: Dict[Key, D
 
     # Base MAU price
     if base_override is not None:
-        base_unit = d(base_override)
+        base_unit = _d(base_override)
     else:
         row_base = _pick_entra_external_id_row(items, want_mfa=False)
-        base_unit = d(row_base.get("retailPrice", 0)) if row_base else d(0)
+        base_unit = _d(row_base.get("retailPrice", 0)) if row_base else _d(0)
         # normalize to per user if needed
         per = _per_count_from_text(row_base.get("unitOfMeasure","") if row_base else "", row_base or {})
         if per != 1 and per > 0:
@@ -107,10 +107,10 @@ def price_entra_external_id(component, region, currency, ent_prices: Dict[Key, D
     # MFA add-on
     if mfa_pct > 0:
         if mfa_override is not None:
-            mfa_unit = d(mfa_override)
+            mfa_unit = _d(mfa_override)
         else:
             row_mfa = _pick_entra_external_id_row(items, want_mfa=True)
-            mfa_unit = d(row_mfa.get("retailPrice", 0)) if row_mfa else d(0)
+            mfa_unit = _d(row_mfa.get("retailPrice", 0)) if row_mfa else _d(0)
             per = _per_count_from_text(row_mfa.get("unitOfMeasure","") if row_mfa else "", row_mfa or {})
             if per != 1 and per > 0:
                 mfa_unit = mfa_unit / per

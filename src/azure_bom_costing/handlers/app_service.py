@@ -1,8 +1,8 @@
 from decimal import Decimal
 from typing import List, Optional, Dict
 
-from .common import _arm_region
-from ..pricing_sources import d, enterprise_lookup, retail_fetch_items
+from ..helpers import _d, _arm_region
+from ..pricing_sources import enterprise_lookup, retail_fetch_items
 from ..types import Key
 
 # ---------- App Service ----------
@@ -26,19 +26,19 @@ def _pick_app_service(items: List[dict], arm_region: str, prefer_uom: str = "1 H
 
     # 1) Region + 1 Hour
     for i in items:
-        if i.get("armRegionName") == arm_region and i.get("unitOfMeasure") == prefer_uom and d(i.get("retailPrice", 0)) > 0:
+        if i.get("armRegionName") == arm_region and i.get("unitOfMeasure") == prefer_uom and _d(i.get("retailPrice", 0)) > 0:
             return i
     # 2) Region any UOM
     for i in items:
-        if i.get("armRegionName") == arm_region and d(i.get("retailPrice", 0)) > 0:
+        if i.get("armRegionName") == arm_region and _d(i.get("retailPrice", 0)) > 0:
             return i
     # 3) Any region + 1 Hour
     for i in items:
-        if i.get("unitOfMeasure") == prefer_uom and d(i.get("retailPrice", 0)) > 0:
+        if i.get("unitOfMeasure") == prefer_uom and _d(i.get("retailPrice", 0)) > 0:
             return i
     # 4) Any positive
     for i in items:
-        if d(i.get("retailPrice", 0)) > 0:
+        if _d(i.get("retailPrice", 0)) > 0:
             return i
     return items[0]
 
@@ -115,10 +115,10 @@ def price_app_service(component, region, currency, ent_prices: Dict[Key, Decimal
         row = _pick_app_service(items, arm_region, uom)
         if not row:
             raise RuntimeError(f"No retail price for App Service {sku} (region={arm_region})")
-        unit = d(row.get("retailPrice", 0))
+        unit = _d(row.get("retailPrice", 0))
     else:
         unit = ent
 
-    hours = d(component.get("hours_per_month", 730))
-    inst = d(component.get("instances", 1))
+    hours = _d(component.get("hours_per_month", 730))
+    inst = _d(component.get("instances", 1))
     return unit * hours * inst, f"AppService {sku} x{inst} @ {unit}/hr"

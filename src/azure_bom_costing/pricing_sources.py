@@ -6,6 +6,7 @@ from typing import Dict, List, Optional
 from urllib.parse import quote
 import requests
 
+from .helpers import _d
 from .types import Key
 
 RETAIL_API = "https://prices.azure.com/api/retail/prices?api-version=2023-01-01-preview"
@@ -14,14 +15,6 @@ MGMT_SCOPE = "https://management.azure.com/.default"
 # ---------- money & decimal helpers ----------
 def money(v) -> Decimal:
     return Decimal(v).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-
-def d(val, default=Decimal(0)) -> Decimal:
-    if isinstance(val, Decimal):
-        return val
-    try:
-        return Decimal(str(val))
-    except Exception:
-        return Decimal(default)
 
 # ---------- HTTP helpers ----------
 def http_get_json(url: str, headers: Optional[Dict[str, str]] = None) -> dict:
@@ -94,7 +87,7 @@ def normalise_enterprise_rows(rows: List[Dict[str, str]]) -> Dict[Key, Decimal]:
         price = r.get("UnitPrice") or r.get("unitPrice") or r.get("DiscountedPrice") or r.get("retailPrice") or "0"
         key = (service.strip(), sku.strip(), region.strip(), uom.strip())
         try:
-            out[key] = d(price)
+            out[key] = _d(price)
         except Exception:
             continue
     return out

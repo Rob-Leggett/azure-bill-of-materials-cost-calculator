@@ -1,8 +1,8 @@
 from decimal import Decimal
 from typing import List, Optional, Dict
 
-from .common import _arm_region
-from ..pricing_sources import d, retail_fetch_items, enterprise_lookup
+from ..helpers import _d, _arm_region
+from ..pricing_sources import retail_fetch_items, enterprise_lookup
 from ..types import Key
 
 # ---------- Bandwidth / Egress ----------
@@ -39,7 +39,7 @@ def _pick_egress_item(items: List[dict], arm_region: str, zone_label: Optional[s
     ]
 
     def score(i: dict) -> int:
-        price = d(i.get("retailPrice", 0))
+        price = _d(i.get("retailPrice", 0))
         if price <= 0:
             return -999
 
@@ -68,7 +68,7 @@ def _pick_egress_item(items: List[dict], arm_region: str, zone_label: Optional[s
 
         return s
 
-    candidates = [i for i in items if d(i.get("retailPrice", 0)) > 0]
+    candidates = [i for i in items if _d(i.get("retailPrice", 0)) > 0]
     if not candidates:
         return None
     candidates.sort(key=score, reverse=True)
@@ -81,9 +81,9 @@ def _pick_egress_item(items: List[dict], arm_region: str, zone_label: Optional[s
     return candidates[0]
 
 def price_bandwidth(component, region, currency, ent_prices: Dict[Key, Decimal]):
-    gb = d(component.get("gb_per_month", 0))
+    gb = _d(component.get("gb_per_month", 0))
     if gb <= 0:
-        return d(0), "Bandwidth (none)"
+        return _d(0), "Bandwidth (none)"
 
     service, sku, uom = "Bandwidth", "Data Transfer Out", "1 GB"
 
@@ -145,24 +145,24 @@ def price_bandwidth(component, region, currency, ent_prices: Dict[Key, Decimal])
         row = _pick_egress_item(items, arm_region, zone_lbl, uom)
         if not row:
             # Don’t crash overall costing if catalog is weird
-            return d(0), "Egress (unpriced — no suitable catalog row found)"
+            return _d(0), "Egress (unpriced — no suitable catalog row found)"
 
-        unit = d(row.get("retailPrice", 0))
+        unit = _d(row.get("retailPrice", 0))
         picked_desc = f"{row.get('productName','?')} / {row.get('meterName','?')}"
 
         # Guardrail: if we somehow grabbed a suspiciously-low non-Internet rate,
         # try to upgrade to an Internet+Zone row if available.
-        if unit < d("0.03") and zone_lbl:
+        if unit < _d("0.03") and zone_lbl:
             zone_l = zone_lbl.lower()
             better = [
                 i for i in items
-                if d(i.get("retailPrice", 0)) > 0
+                if _d(i.get("retailPrice", 0)) > 0
                    and "internet" in " ".join([i.get("productName",""), i.get("meterName","")]).lower()
                    and zone_l in " ".join([i.get("productName",""), i.get("meterName","")]).lower()
             ]
             if better:
-                better.sort(key=lambda j: d(j.get("retailPrice", 0)))
-                unit2 = d(better[0].get("retailPrice", 0))
+                better.sort(key=lambda j: _d(j.get("retailPrice", 0)))
+                unit2 = _d(better[0].get("retailPrice", 0))
                 if unit2 > unit:
                     unit = unit2
                     picked_desc = f"{better[0].get('productName','?')} / {better[0].get('meterName','?')}"

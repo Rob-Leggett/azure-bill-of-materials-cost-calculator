@@ -1,8 +1,8 @@
 from decimal import Decimal
 from typing import Dict, Optional, List
 
-from .common import _arm_region
-from ..pricing_sources import d, retail_fetch_items, enterprise_lookup
+from ..helpers import _d, _arm_region
+from ..pricing_sources import retail_fetch_items, enterprise_lookup
 from ..types import Key
 
 # ---------- Virtual Machines ----------
@@ -19,19 +19,19 @@ def _pick_vm_item(items: List[dict], os_filter: str, prefer_uom: str = "1 Hour")
 
     # 1) 1 Hour + OS
     for i in items:
-        if i.get("unitOfMeasure") == prefer_uom and has_os(i) and d(i.get("retailPrice", 0)) > 0:
+        if i.get("unitOfMeasure") == prefer_uom and has_os(i) and _d(i.get("retailPrice", 0)) > 0:
             return i
     # 2) Any UOM + OS
     for i in items:
-        if has_os(i) and d(i.get("retailPrice", 0)) > 0:
+        if has_os(i) and _d(i.get("retailPrice", 0)) > 0:
             return i
     # 3) 1 Hour, any OS
     for i in items:
-        if i.get("unitOfMeasure") == prefer_uom and d(i.get("retailPrice", 0)) > 0:
+        if i.get("unitOfMeasure") == prefer_uom and _d(i.get("retailPrice", 0)) > 0:
             return i
     # 4) First positive price
     for i in items:
-        if d(i.get("retailPrice", 0)) > 0:
+        if _d(i.get("retailPrice", 0)) > 0:
             return i
     return items[0] if items else None
 
@@ -76,10 +76,10 @@ def price_vm(component, region, currency, ent_prices: Dict[Key, Decimal]):
         row = _pick_vm_item(items, os_filter, uom)
         if not row:
             raise RuntimeError(f"No retail price for VM {sku} (region={arm_region})")
-        unit = d(row.get("retailPrice", 0))
+        unit = _d(row.get("retailPrice", 0))
     else:
         unit = ent
 
-    hours = d(component.get("hours_per_month", 730))
-    count = d(component.get("count", 1))
+    hours = _d(component.get("hours_per_month", 730))
+    count = _d(component.get("count", 1))
     return unit * hours * count, f"VM {sku} x{count} @ {unit}/hr"

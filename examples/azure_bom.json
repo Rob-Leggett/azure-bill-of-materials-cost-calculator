@@ -15,57 +15,57 @@
       "tier": "prod",
       "components": [
         { "type": "app_service", "sku": "P1v3", "instances": 2, "hours_per_month": 730 },
-        { "type": "storage", "sku": "Standard_LRS_Hot", "tb": 1, "transactions_per_month": 250000 }
+        { "type": "blob_storage", "sku": "Standard_LRS_Hot", "tb": 1, "transactions_per_month": 300000 }
       ]
     },
     {
       "name": "Identity",
       "tier": "shared",
       "components": [
-        { "type": "entra_external_id", "monthly_active_users": 30000, "mfa_enabled_pct": 0.9, "premium_features": true }
+        { "type": "entra_external_id", "monthly_active_users": 50000, "mfa_enabled_pct": 0.9, "premium_features": true }
       ]
     },
     {
       "name": "AI",
       "tier": "prod",
       "components": [
-        { "type": "ai_openai", "deployment": "gpt-4o-mini", "input_tokens_1k_per_month": 12000, "output_tokens_1k_per_month": 6000 }
+        { "type": "ai_openai", "deployment": "gpt-4o-mini", "input_tokens_1k_per_month": 18000, "output_tokens_1k_per_month": 9000 }
       ]
     },
     {
       "name": "DataPlatform",
       "tier": "prod",
       "components": [
-        { "type": "fabric_capacity", "sku": "F64", "hours_per_day": 12, "days_per_month": 22 },
-        { "type": "onelake_storage", "tb_hot": 5, "tb_cool": 20 }
+        { "type": "fabric_capacity", "sku": "F64", "hours_per_day": 16, "days_per_month": 22 },
+        { "type": "onelake_storage", "tb_hot": 10, "tb_cool": 40 }
       ]
     },
     {
       "name": "Reporting",
       "tier": "prod",
       "components": [
-        { "type": "fabric_capacity", "sku": "F32", "hours_per_day": 10, "days_per_month": 22 }
+        { "type": "fabric_capacity", "sku": "F32", "hours_per_day": 12, "days_per_month": 22 }
       ]
     },
     {
       "name": "Observability",
       "tier": "shared",
       "components": [
-        { "type": "log_analytics", "ingest_gb_per_day": 50, "retention_days": 30 }
+        { "type": "log_analytics", "ingest_gb_per_day": 120, "retention_days": 30 }
       ]
     },
     {
       "name": "LogsArchive",
       "tier": "shared",
       "components": [
-        { "type": "storage", "sku": "Standard_LRS_Cool", "tb": 2, "transactions_per_month": 200000 }
+        { "type": "storage", "sku": "Standard_LRS_Cool", "tb": 4, "transactions_per_month": 400000 }
       ]
     },
     {
       "name": "CorpNetwork",
       "tier": "shared",
       "components": [
-        { "type": "bandwidth_egress", "gb_per_month": 1200 }
+        { "type": "bandwidth_egress", "gb_per_month": 1800 }
       ]
     }
   ]

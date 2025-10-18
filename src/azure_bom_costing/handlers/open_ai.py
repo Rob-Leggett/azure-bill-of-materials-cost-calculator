@@ -1,8 +1,8 @@
 from decimal import Decimal
 from typing import List, Dict, Optional
 
-from .common import _per_count_from_text, _text_fields, _arm_region
-from ..pricing_sources import d, retail_fetch_items
+from ..helpers import _d, _per_count_from_text, _text_fields, _arm_region
+from ..pricing_sources import retail_fetch_items
 from ..types import Key
 
 # ---------- Azure OpenAI ----------
@@ -42,11 +42,11 @@ def _pick_openai_rate(items: List[dict], want_tokens: bool, direction: Optional[
         if "1k" in u or "1,000" in u or "1000" in u:
             s += 2
         # positive price only
-        if d(i.get("retailPrice", 0)) <= 0:
+        if _d(i.get("retailPrice", 0)) <= 0:
             s -= 100
         return s
 
-    candidates = [i for i in items if d(i.get("retailPrice", 0)) > 0]
+    candidates = [i for i in items if _d(i.get("retailPrice", 0)) > 0]
     if not candidates:
         return None
     return sorted(candidates, key=score, reverse=True)[0]
@@ -74,10 +74,10 @@ def price_ai_openai(component, region, currency, ent_prices: Dict[Key, Decimal])
     dep_l = (deployment or "").lower()
 
     # Volumes
-    in_1k  = d(component.get("input_tokens_1k_per_month", 0))
-    out_1k = d(component.get("output_tokens_1k_per_month", 0))
-    img_n  = d(component.get("images_generated", 0))
-    emb_1k = d(component.get("embeddings_tokens_1k_per_month", 0))
+    in_1k  = _d(component.get("input_tokens_1k_per_month", 0))
+    out_1k = _d(component.get("output_tokens_1k_per_month", 0))
+    img_n  = _d(component.get("images_generated", 0))
+    emb_1k = _d(component.get("embeddings_tokens_1k_per_month", 0))
 
     # Optional per-meter overrides
     ov = component.get("unit_price_overrides", {}) or {}
@@ -118,27 +118,27 @@ def price_ai_openai(component, region, currency, ent_prices: Dict[Key, Decimal])
             narrowed = [i for i in items if dep_l in _text_fields(i)]
             if narrowed:
                 items = narrowed
-        return [i for i in items if d(i.get("retailPrice", 0)) > 0]
+        return [i for i in items if _d(i.get("retailPrice", 0)) > 0]
 
     items = fetch_openai_chunks()
 
-    total = d(0)
+    total = _d(0)
     details: List[str] = []
 
     # ---- Input tokens
     if in_1k > 0:
         if in_override is not None:
-            unit = d(in_override)
+            unit = _d(in_override)
         else:
             row = _pick_openai_rate(items, want_tokens=True, direction="input")
             if not row:
                 row = _pick_openai_rate(items, want_tokens=True)  # fallback
-            unit = d(row.get("retailPrice", 0)) if row else d(0)
+            unit = _d(row.get("retailPrice", 0)) if row else _d(0)
             # Normalize to per 1k if UOM is different
             per = _per_count_from_text(row.get("unitOfMeasure","") if row else "", row or {})
             if per != 1000:
                 # unit is per 'per' tokens; we want per 1k
-                unit = unit * (d(1000) / per)
+                unit = unit * (_d(1000) / per)
         part = unit * in_1k
         total += part
         details.append(f"in:{in_1k}k @ {unit}/1k")
@@ -146,15 +146,15 @@ def price_ai_openai(component, region, currency, ent_prices: Dict[Key, Decimal])
     # ---- Output tokens
     if out_1k > 0:
         if out_override is not None:
-            unit = d(out_override)
+            unit = _d(out_override)
         else:
             row = _pick_openai_rate(items, want_tokens=True, direction="output")
             if not row:
                 row = _pick_openai_rate(items, want_tokens=True)
-            unit = d(row.get("retailPrice", 0)) if row else d(0)
+            unit = _d(row.get("retailPrice", 0)) if row else _d(0)
             per = _per_count_from_text(row.get("unitOfMeasure","") if row else "", row or {})
             if per != 1000:
-                unit = unit * (d(1000) / per)
+                unit = unit * (_d(1000) / per)
         part = unit * out_1k
         total += part
         details.append(f"out:{out_1k}k @ {unit}/1k")
@@ -162,10 +162,10 @@ def price_ai_openai(component, region, currency, ent_prices: Dict[Key, Decimal])
     # ---- Images
     if img_n > 0:
         if img_override is not None:
-            unit = d(img_override)
+            unit = _d(img_override)
         else:
             row = _pick_openai_rate(items, want_tokens=False, want_images=True)
-            unit = d(row.get("retailPrice", 0)) if row else d(0)
+            unit = _d(row.get("retailPrice", 0)) if row else _d(0)
             # images are typically per each
             per = _per_count_from_text(row.get("unitOfMeasure","") if row else "", row or {})
             if per != 1:
@@ -177,18 +177,18 @@ def price_ai_openai(component, region, currency, ent_prices: Dict[Key, Decimal])
     # ---- Embeddings
     if emb_1k > 0:
         if emb_override is not None:
-            unit = d(emb_override)
+            unit = _d(emb_override)
         else:
             row = _pick_openai_rate(items, want_tokens=False, want_embeddings=True)
-            unit = d(row.get("retailPrice", 0)) if row else d(0)
+            unit = _d(row.get("retailPrice", 0)) if row else _d(0)
             per = _per_count_from_text(row.get("unitOfMeasure","") if row else "", row or {})
             if per != 1000:
-                unit = unit * (d(1000) / per)
+                unit = unit * (_d(1000) / per)
         part = unit * emb_1k
         total += part
         details.append(f"emb:{emb_1k}k @ {unit}/1k")
 
     if not details:
-        return d(0), "Azure OpenAI (no usage provided)"
+        return _d(0), "Azure OpenAI (no usage provided)"
     return total, "OpenAI " + " ".join(details)
 

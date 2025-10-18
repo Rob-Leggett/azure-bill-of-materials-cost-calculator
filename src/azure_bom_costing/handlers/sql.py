@@ -1,8 +1,8 @@
 from decimal import Decimal
 from typing import List, Dict
 
-from .common import _arm_region
-from ..pricing_sources import enterprise_lookup, retail_fetch_items, retail_pick, d
+from ..helpers import _d, _arm_region
+from ..pricing_sources import enterprise_lookup, retail_fetch_items, retail_pick
 from ..types import Key
 
 # ---------- Azure SQL PaaS (vCore) ----------
@@ -31,8 +31,8 @@ def price_sql_paas(component, region, currency, ent_prices: Dict[Key, Decimal]):
 
     ent = enterprise_lookup(ent_prices, service, sku, region, uom)
     if ent is not None:
-        hours = d(component.get("hours_per_month", 730))
-        total = ent * d(vcores) * hours
+        hours = _d(component.get("hours_per_month", 730))
+        total = ent * _d(vcores) * hours
         unit_txt = "enterprise_rate"
     else:
         arm_region = _arm_region(region)
@@ -85,19 +85,19 @@ def price_sql_paas(component, region, currency, ent_prices: Dict[Key, Decimal]):
             return s
 
         items_scored = sorted(items, key=score, reverse=True)
-        top = next((i for i in items_scored if score(i) > 0 and d(i.get("retailPrice", 0)) > 0), None)
+        top = next((i for i in items_scored if score(i) > 0 and _d(i.get("retailPrice", 0)) > 0), None)
         if not top:
-            top = next((i for i in items_scored if d(i.get("retailPrice", 0)) > 0), None)
+            top = next((i for i in items_scored if _d(i.get("retailPrice", 0)) > 0), None)
         if not top:
             raise RuntimeError(f"No retail price for SQL {sku} (region={arm_region})")
 
-        unit_vcore_hr = d(top.get("retailPrice", 0))
-        hours = d(component.get("hours_per_month", 730))
-        total = unit_vcore_hr * d(vcores) * hours
+        unit_vcore_hr = _d(top.get("retailPrice", 0))
+        hours = _d(component.get("hours_per_month", 730))
+        total = unit_vcore_hr * _d(vcores) * hours
         unit_txt = f"{unit_vcore_hr}"
 
     # Optional storage approximation
-    max_gb = d(component.get("max_gb", 0))
+    max_gb = _d(component.get("max_gb", 0))
     if max_gb > 0:
         s_service, s_sku, s_uom = "Azure SQL Database", "Data Stored", "1 GB/Month"
         s_ent = enterprise_lookup(ent_prices, s_service, s_sku, region, s_uom)
@@ -112,11 +112,11 @@ def price_sql_paas(component, region, currency, ent_prices: Dict[Key, Decimal]):
             s_items = retail_fetch_items(filt_s, currency)
             s_row = retail_pick(s_items, s_uom) or (s_items[0] if s_items else None)
             if s_row:
-                total += d(s_row.get("retailPrice", 0)) * max_gb
+                total += _d(s_row.get("retailPrice", 0)) * max_gb
         else:
             total += s_ent * max_gb
 
     if component.get("ha"):
-        total *= d("1.5")
+        total *= _d("1.5")
 
     return total, f"SQL {sku} @ {unit_txt}/vCore-hr × {vcores} vC (+storage approx)"

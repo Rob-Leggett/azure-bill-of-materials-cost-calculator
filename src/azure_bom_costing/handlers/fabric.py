@@ -1,9 +1,9 @@
 from decimal import Decimal
 from typing import Dict, List
 
-from .blob_storage import price_storage
-from .common import _arm_region
-from ..pricing_sources import d, retail_fetch_items, enterprise_lookup
+from .storage import price_blob_storage
+from ..helpers import _d, _arm_region
+from ..pricing_sources import retail_fetch_items, enterprise_lookup
 from ..types import Key
 
 # ---------- Fabric ----------
@@ -96,7 +96,7 @@ def price_fabric_capacity(component, region, currency, ent_prices: Dict[Key, Dec
                 pass
 
         # Keep only positive-priced rows
-        items = [i for i in items if d(i.get("retailPrice", 0)) > 0]
+        items = [i for i in items if _d(i.get("retailPrice", 0)) > 0]
 
         if not items:
             raise RuntimeError(f"No price found for Fabric {sku} (region={arm_region})")
@@ -120,22 +120,22 @@ def price_fabric_capacity(component, region, currency, ent_prices: Dict[Key, Dec
 
         items.sort(key=score, reverse=True)
         row = items[0]
-        unit = d(row.get("retailPrice", 0))
+        unit = _d(row.get("retailPrice", 0))
 
     # Hours × days modeling
-    hpd = d(component.get("hours_per_day", 24))
-    dpm = d(component.get("days_per_month", 30))
+    hpd = _d(component.get("hours_per_day", 24))
+    dpm = _d(component.get("days_per_month", 30))
     return unit * hpd * dpm, f"Fabric {sku} @ {unit}/hr × {hpd}h × {dpm}d"
 
 # ---------- OneLake storage helper (reuses blob) ----------
 def price_onelake_storage(component, region, currency, ent_prices: Dict[Key, Decimal]):
-    total = d(0)
+    total = _d(0)
     details = []
     for label, tier in [("tb_hot", "Hot"), ("tb_cool", "Cool")]:
-        tb = d(component.get(label, 0))
+        tb = _d(component.get(label, 0))
         if tb > 0:
             fake = {"sku": f"Standard_LRS_{tier}", "tb": float(tb)}
-            part, _ = price_storage(fake, region, currency, ent_prices)
+            part, _ = price_blob_storage(fake, region, currency, ent_prices)
             total += part
             details.append(f"{tier}:{tb}TB")
     return total, f"OneLake {' '.join(details)}"
