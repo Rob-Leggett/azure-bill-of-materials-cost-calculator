@@ -1,0 +1,78 @@
+{
+  "region": "Australia East",
+  "currency": "AUD",
+  "assumptions": {
+    "hours_per_month": 730,
+    "fabric_workdays_per_month": 22,
+    "savings_plan": {
+      "term_years": 1,
+      "coverage_pct": 0.6
+    },
+    "ri": {
+      "term_years": 3,
+      "coverage_pct": 0.25
+    },
+    "devtest_discount": false,
+    "egress_gb_per_month": 500
+  },
+  "workloads": [
+    {
+      "name": "CaseManagementApp",
+      "tier": "prod",
+      "components": [
+        {
+          "type": "vm",
+          "armSku": "Standard_D4s_v5",
+          "count": 2,
+          "os": "Linux",
+          "spot": false,
+          "hours_per_month": 730
+        },
+        {
+          "type": "sql_paas",
+          "sku": "GP_S_Gen5_4",
+          "max_gb": 256,
+          "ha": true
+        },
+        {
+          "type": "storage",
+          "sku": "Standard_LRS_Hot",
+          "tb": 5,
+          "transactions_per_month": 1000000
+        },
+        {
+          "type": "app_service",
+          "sku": "P1v3",
+          "instances": 1
+        }
+      ]
+    },
+    {
+      "name": "DataPlatform",
+      "tier": "prod",
+      "components": [
+        {
+          "type": "fabric_capacity",
+          "sku": "F64",
+          "hours_per_day": 12,
+          "days_per_month": 22
+        },
+        {
+          "type": "onelake_storage",
+          "tb_hot": 5,
+          "tb_cool": 20
+        }
+      ]
+    },
+    {
+      "name": "CorpNetwork",
+      "tier": "shared",
+      "components": [
+        {
+          "type": "bandwidth_egress",
+          "gb_per_month": 1200
+        }
+      ]
+    }
+  ]
+}

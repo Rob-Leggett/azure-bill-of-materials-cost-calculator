@@ -1,0 +1,8 @@
+ServiceName,SkuName,armRegionName,UnitOfMeasure,UnitPrice,Currency
+Virtual Machines,Standard_D4s_v5,Australia East,1 Hour,0.095,AUD
+App Service,P1v3,Australia East,1 Hour,0.21,AUD
+Azure SQL Database,GP_S_Gen5_4,Australia East,1 Hour,0.60,AUD
+Storage,LRS Hot Data Stored,Australia East,1 GB/Month,0.00085,AUD
+Bandwidth,Data Transfer Out,Australia East,1 GB,0.12,AUD
+Microsoft Fabric,F64,Australia East,1 Hour,2.50,AUD
+Azure SQL Database,Data Stored,Australia East,1 GB/Month,0.0005,AUD
