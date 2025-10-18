@@ -15,7 +15,7 @@
       "tier": "prod",
       "components": [
         { "type": "app_service", "sku": "P1v3", "instances": 2, "hours_per_month": 730 },
-        { "type": "blob_storage", "sku": "Standard_LRS_Hot", "tb": 1, "transactions_per_month": 300000 }
+        { "type": "storage_blob", "sku": "Standard_LRS_Hot", "tb": 1, "transactions_per_month": 300000 }
       ]
     },
     {
