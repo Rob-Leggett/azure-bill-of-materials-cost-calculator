@@ -1,19 +1,22 @@
 from __future__ import annotations
 from decimal import Decimal
-from typing import Dict, Tuple, Optional
+from typing import Dict, Optional
 
-from .handlers import (
-    price_vm, price_app_service, price_sql_paas,
-    price_storage, price_bandwidth, price_fabric_capacity,
-    price_onelake_storage,
-)
+from .handlers.app_service import price_app_service
+from .handlers.blob_storage import price_storage
+from .handlers.egress import price_bandwidth
+from .handlers.entra_id import price_entra_external_id
+from .handlers.fabric import price_fabric_capacity, price_onelake_storage
+from .handlers.log_analytics import price_log_analytics
+from .handlers.open_ai import price_ai_openai
+from .handlers.sql import price_sql_paas
+from .handlers.vm import price_vm
 from .pricing_sources import (
     download_price_sheet_mca, download_price_sheet_ea,
     normalise_enterprise_rows, load_enterprise_csv,
     money, d,
 )
-
-Key = Tuple[str, str, str, str]  # (serviceName, skuName, region, unitOfMeasure)
+from .types import Key
 
 
 def apply_optimisations(total: Decimal, assumptions: dict) -> Decimal:
@@ -65,6 +68,9 @@ def run_model(
         "bandwidth_egress": lambda c: price_bandwidth(c, region, currency, ent_prices),
         "fabric_capacity":  lambda c: price_fabric_capacity(c, region, currency, ent_prices),
         "onelake_storage":  lambda c: price_onelake_storage(c, region, currency, ent_prices),
+        "ai_openai":          lambda c: price_ai_openai(c, region, currency, ent_prices),
+        "entra_external_id":  lambda c: price_entra_external_id(c, region, currency, ent_prices),
+        "log_analytics":      lambda c: price_log_analytics(c, region, currency, ent_prices),
     }
 
     grand_total_opt = Decimal(0)

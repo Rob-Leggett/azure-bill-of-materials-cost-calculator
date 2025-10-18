@@ -1,11 +1,12 @@
 # pricing_sources.py
 from __future__ import annotations
 import csv
-import os
 from decimal import Decimal, ROUND_HALF_UP
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 from urllib.parse import quote
 import requests
+
+from .types import Key
 
 RETAIL_API = "https://prices.azure.com/api/retail/prices?api-version=2023-01-01-preview"
 MGMT_SCOPE = "https://management.azure.com/.default"
@@ -82,7 +83,6 @@ def download_price_sheet_ea(access_token: str, enrollment_account_id: str) -> Li
         raise RuntimeError("Unknown price sheet format; expected CSV")
 
 # ---------- Normalise enterprise rows ----------
-Key = Tuple[str, str, str, str]  # (serviceName, skuName, region, unitOfMeasure)
 
 def normalise_enterprise_rows(rows: List[Dict[str, str]]) -> Dict[Key, Decimal]:
     out: Dict[Key, Decimal] = {}
