@@ -1,5 +1,26 @@
 # =====================================================================================
-# Storage (Queue/Table/File/Blob)
+# Azure Storage (Queue / Table / File Share / Blob). Example components:
+#
+# # Queue (10 million ops per month)
+# { "type": "storage_queue", "operations_per_month": 10000000 }
+#
+# # Table (5 million ops per month)
+# { "type": "storage_table", "operations_per_month": 5000000 }
+#
+# # File Share (Standard, 2TB)
+# { "type": "fileshare", "tb": 2 }
+#
+# # Blob (Hot tier, LRS redundancy, 5TB, 1M transactions)
+# { "type": "blob_storage", "sku": "Standard_LRS_Hot", "tb": 5, "transactions_per_month": 1000000 }
+#
+# Notes:
+# • Covers all Azure Storage types commonly used outside Fabric or Synapse.
+# • Queue/Table – charged per 10,000 transactions.
+# • File Share – charged per GB-month of capacity (Standard tier only).
+# • Blob – charged per GB-month by tier (Hot/Cool/Archive) and redundancy (LRS/GRS/ZRS/etc.).
+# • Transactions (for Blob) add extra cost; batch size auto-detected (per 10k/100k).
+# • Prices resolved via Enterprise Price Sheet or Retail API.
+# • Billing units: "1 GB/Month", "10,000" transactions.
 # =====================================================================================
 from decimal import Decimal
 from typing import Dict, Optional, List

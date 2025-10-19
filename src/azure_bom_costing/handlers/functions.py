@@ -1,13 +1,28 @@
-# =========================================================
-# Azure Functions (Consumption)
-# component:
-#   { "type":"functions", "gb_seconds": 250000000, "executions": 200000000 }
-#   (pass GB-seconds total and raw execution count; both optional)
-# =========================================================
+# =====================================================================================
+# Azure Functions (Consumption Plan). Example component:
+# {
+#   "type": "functions",
+#   "gb_seconds": 250000000,
+#   "executions": 200000000
+# }
+#
+# Notes:
+# • Models Azure Functions (serverless) under the Consumption pricing plan.
+# • `gb_seconds` – Total monthly GB-seconds of execution time (memory × duration).
+# • `executions` – Total monthly execution count.
+# • Billing units:
+#     - Execution Time: “per 1,000,000 GB-seconds”
+#     - Executions: “per 1,000,000 executions”
+# • Automatically retrieves regional consumption rates from Azure Retail API.
+# • Enterprise price sheet lookup supported if available (MCA / EA customers).
+# • Excludes premium plan (App Service plan-based) pricing — model separately.
+# • Use for event-driven, pay-per-use Functions where compute time and invocation
+#   volume are both billed components.
+# =====================================================================================
 from decimal import Decimal
 from typing import Dict
 
-from ..helpers import _pick, _arm_region
+from ..helpers import _d, _pick, _arm_region
 from ..pricing_sources import enterprise_lookup, retail_pick, retail_fetch_items
 from ..types import Key
 

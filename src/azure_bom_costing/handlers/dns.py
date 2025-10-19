@@ -1,9 +1,37 @@
-# =========================================================
-# DNS + Traffic Manager
-# component:
-#   { "type":"dns_tm", "dns_zones": 5, "dns_queries_millions": 30,
-#     "tm_profiles": 2, "tm_queries_millions": 20, "hours_per_month":730 }
-# =========================================================
+# =====================================================================================
+# DNS + Traffic Manager. Example component:
+# {
+#   "type": "dns_tm",
+#   "dns_zones": 5,
+#   "dns_queries_millions": 30,
+#   "tm_profiles": 2,
+#   "tm_queries_millions": 20,
+#   "hours_per_month": 730
+# }
+#
+# Notes:
+# • Models DNS and Traffic Manager control-plane billing.
+# • Billing Components:
+#     - DNS:
+#         • Hosted Zones → per zone/month
+#         • DNS Queries → per 1M queries
+#     - Traffic Manager:
+#         • Profiles → per hour
+#         • DNS Queries → per 1M queries
+# • Billing Units:
+#     - Zones: "1/Month"
+#     - Queries: "1,000,000"
+#     - Profiles: "1 Hour"
+# • Common Usage:
+#     - DNS zones for public or private hosted zones.
+#     - Traffic Manager for global endpoint routing (latency, priority, or geo-based).
+# • Queries Azure Retail Pricing API for:
+#     - “Hosted Zone” and “DNS Queries” meters under serviceName = 'DNS'.
+#     - “Profile” and “DNS Queries” under serviceName = 'Traffic Manager'.
+# • Automatically scales for query and profile volumes based on provided workload data.
+# • Typical combined cost is small (<$10–20/month for most workloads), but included for
+#   completeness in holistic platform cost modeling.
+# =====================================================================================
 from decimal import Decimal
 from typing import Dict
 

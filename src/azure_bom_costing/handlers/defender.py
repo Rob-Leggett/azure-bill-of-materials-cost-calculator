@@ -1,7 +1,36 @@
-# =========================================================
-# Microsoft Defender for Cloud (very simplified)
-# component: { "type":"defender", "plan":"Servers", "resource_count": 20, "hours_per_month":730 }
-# =========================================================
+# =====================================================================================
+# Microsoft Defender for Cloud (simplified cost model). Example component:
+# {
+#   "type": "defender",
+#   "plan": "Servers",
+#   "resource_count": 20,
+#   "hours_per_month": 730
+# }
+#
+# Notes:
+# • Models Defender for Cloud protection plans such as:
+#     - Servers
+#     - App Services
+#     - Databases
+#     - Storage
+#     - Containers
+#     - Key Vault
+# • Pricing varies by plan (meterName / productName) and is typically billed per resource-hour.
+# • Core parameters:
+#     - `plan` → Defender plan type (used in SKU / meterName filtering)
+#     - `resource_count` → Number of protected resources
+#     - `hours_per_month` → Duration active (default 730h)
+# • Enterprise lookup supported (rare; typically consumption-based).
+# • Uses Azure Retail Prices API with:
+#     - serviceName eq 'Microsoft Defender for Cloud'
+#     - Filters by `plan` keyword in meterName or productName.
+# • Calculation:
+#     Total = unit_rate_per_hour × resource_count × hours_per_month
+# • Example output:
+#     Defender Servers 20x @ 0.02/hr × 730h = $292.00
+# • This handler provides an approximate monthly cost for Defender coverage and is suitable
+#   for workload-level security cost estimation.
+# =====================================================================================
 from decimal import Decimal
 from typing import Dict
 

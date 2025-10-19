@@ -1,7 +1,45 @@
-# =========================================================
-# Application Insights (separate from LA if you want explicit line)
-# component: { "type":"app_insights", "ingest_gb_per_day": 10, "retention_days": 30 }
-# =========================================================
+# =====================================================================================
+# Azure Application Insights (telemetry ingestion + data retention). Example component:
+# {
+#   "type": "app_insights",
+#   "ingest_gb_per_day": 10,
+#   "retention_days": 30
+# }
+#
+# Notes:
+# • Models Application Insights data ingestion and retention costs.
+# • Typically used to separate App Insights telemetry from Log Analytics line items.
+# • Pricing based on daily data volume and retention duration.
+#
+# • Core parameters:
+#     - `ingest_gb_per_day` → Average daily ingestion volume in GB
+#     - `retention_days` → Total retention period in days
+#     - `included_retention_days` → Optional number of days included in base plan (default 0)
+#     - `days_per_month` → Used to scale daily ingestion (default 30)
+#
+# • Pricing structure:
+#     - serviceName eq 'Application Insights'
+#     - meterName contains 'Data Ingested' → unitOfMeasure = "1 GB"
+#     - meterName contains 'Data Retention' → unitOfMeasure = "1 GB/Month"
+#
+# • Enterprise lookup supported:
+#     enterprise_lookup(ent_prices, "Application Insights", "Data Ingested", region, "1 GB")
+#     enterprise_lookup(ent_prices, "Application Insights", "Data Retention", region, "1 GB/Month")
+# • Retail fallback queries Azure Retail Prices API if enterprise sheet unavailable.
+#
+# • Calculation:
+#     ingestion_cost = ingest_gb_per_day × days_per_month × rate_per_GB_ingested
+#     retention_cost = rate_per_GB_month × (billable_days / 30) × (ingest_gb_per_day × days_per_month)
+#     total_cost = ingestion_cost + retention_cost
+#
+# • Example output:
+#     App Insights ingest:10GB/d @ 0.0036/GB + retention 30d = $1.08/month
+#
+# • Typical uses:
+#     - Telemetry collection for applications using Application Insights
+#     - Cost transparency for ingestion vs retention beyond included quota
+# • Commonly paired with Log Analytics (for correlated query/alerting) but costed separately here.
+# =====================================================================================
 from decimal import Decimal
 from typing import Dict
 

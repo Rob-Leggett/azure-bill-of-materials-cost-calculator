@@ -1,8 +1,47 @@
-# =========================================================
-# Azure Backup (simplified to Backup Storage + optional protected instances)
-# component:
-#   { "type":"backup", "backup_storage_tb": 2, "redundancy":"LRS|GRS", "instances_small": 5, "instances_medium": 2 }
-# =========================================================
+# =====================================================================================
+# Azure Backup (simplified to Backup Storage + optional Protected Instances). Example component:
+# {
+#   "type": "backup",
+#   "backup_storage_tb": 2,
+#   "redundancy": "LRS",
+#   "instances_small": 5,
+#   "instances_medium": 2
+# }
+#
+# Notes:
+# • Models Azure Backup costs based on:
+#     1. Backup Storage (LRS or GRS, per GB-month)
+#     2. Protected Instances (per-instance monthly fee by size category)
+#
+# • Core parameters:
+#     - `backup_storage_tb` → Total protected backup storage in TB
+#     - `redundancy` → "LRS" (locally redundant) or "GRS" (geo-redundant)
+#     - `instances_small` → Count of small protected instances (≤50 GB)
+#     - `instances_medium` → Count of medium instances (50–500 GB)
+#     - `instances_large` → Count of large instances (>500 GB)
+#
+# • Pricing structure:
+#     - serviceName eq 'Azure Backup'
+#     - meterName contains 'Backup Storage' (unitOfMeasure: "1 GB/Month")
+#     - meterName contains 'Protected Instance' (unitOfMeasure: "1/Month")
+#
+# • Enterprise lookup supported:
+#     enterprise_lookup(ent_prices, "Azure Backup", f"Backup Storage {redundancy}", region, "1 GB/Month")
+#     enterprise_lookup(ent_prices, "Azure Backup", "Protected Instance Small|Medium|Large", region, "1/Month")
+# • Retail fallback queries Azure Retail Prices API when enterprise sheet unavailable.
+#
+# • Calculation:
+#     total_cost = (backup_storage_tb × 1024 × rate_per_GB_month)
+#                + Σ (instances_small|medium|large × rate_per_instance_month)
+#
+# • Example output:
+#     Azure Backup (storage:2TB LRS + 5 small + 2 medium) = $47.90
+#
+# • Typical uses:
+#     - VM, SQL, or File Share backups through Recovery Services vaults
+#     - DR strategy modeling where backup retention and redundancy type matter
+# • Does not include Azure Site Recovery (ASR); model separately if used.
+# =====================================================================================
 from decimal import Decimal
 from typing import Dict
 

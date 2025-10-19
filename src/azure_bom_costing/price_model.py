@@ -2,7 +2,6 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import Dict, Optional
 
-from .handlers.aks import price_aks_cluster
 from .handlers.api_management import price_api_management
 from .handlers.app_insights import price_app_insights
 from .handlers.app_service import price_app_service
@@ -19,7 +18,8 @@ from .handlers.front_door import price_front_door
 from .handlers.functions import price_functions
 from .handlers.goverance import price_governance
 from .handlers.key_vault import price_key_vault
-from .handlers.load_balancers import price_app_gateway
+from .handlers.kubernetes import price_aks_cluster
+from .handlers.load_balancers import price_app_gateway, price_load_balancer
 from .handlers.private_network import price_private_networking
 from .handlers.redis import price_redis
 from .handlers.storage import price_blob_storage, price_storage_queue, price_storage_table, price_fileshare
@@ -106,6 +106,7 @@ def run_model(
         "functions":            lambda c: price_functions(c, region, currency, ent_prices),
         "governance":           lambda c: price_governance(c, region, currency, ent_prices),
         "key_vault":            lambda c: price_key_vault(c, region, currency, ent_prices),
+        "load_balancer":        lambda c: price_load_balancer(c, region, currency, ent_prices),
         "log_analytics":        lambda c: price_log_analytics(c, region, currency, ent_prices),
         "onelake_storage":      lambda c: price_onelake_storage(c, region, currency, ent_prices),
         "private_networking":   lambda c: price_private_networking(c, region, currency, ent_prices),

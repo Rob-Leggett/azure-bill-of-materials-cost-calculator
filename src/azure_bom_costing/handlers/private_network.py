@@ -1,10 +1,28 @@
-# =========================================================
-# Private Networking: Private Endpoints + NAT Gateway
-# component:
-#   { "type":"private_networking",
-#     "private_endpoints": 6, "pe_hours": 730,
-#     "nat_gateways": 2, "nat_hours": 730, "nat_data_gb": 1500 }
-# =========================================================
+# =====================================================================================
+# Azure Private Networking (Private Endpoints + NAT Gateway). Example component:
+# {
+#   "type": "private_networking",
+#   "private_endpoints": 6,
+#   "pe_hours": 730,
+#   "nat_gateways": 2,
+#   "nat_hours": 730,
+#   "nat_data_gb": 1500
+# }
+#
+# Notes:
+# • Models both Private Endpoints and NAT Gateways.
+# • `private_endpoints` – Number of Private Endpoints (per-hour billing).
+# • `pe_hours` – Hours per month each endpoint is active (default 730).
+# • `nat_gateways` – Number of NAT Gateways provisioned.
+# • `nat_hours` – Hours per month each NAT Gateway runs.
+# • `nat_data_gb` – Outbound data processed via NAT (billed per GB).
+# • Billing units:
+#     - Private Endpoint: “1 Hour”
+#     - NAT Gateway Hours: “1 Hour”
+#     - NAT Gateway Data: “1 GB”
+# • Used to account for VNet isolation and egress routing costs in secure environments.
+# • Rates fetched from Azure Retail API (no enterprise-specific pricing usually available).
+# =====================================================================================
 from decimal import Decimal
 from typing import Dict
 

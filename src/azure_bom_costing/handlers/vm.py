@@ -1,3 +1,21 @@
+# =====================================================================================
+# Virtual Machines (IaaS). Example component:
+# {
+#   "type": "vm",
+#   "armSku": "Standard_D4s_v5",
+#   "count": 2,
+#   "os": "Linux",
+#   "hours_per_month": 730
+# }
+#
+# Notes:
+# • `armSku` – Azure VM size (e.g., Standard_D4s_v5, D8s_v5, E4ds_v5, etc.)
+# • `os` – Used to match either Linux or Windows pricing meters.
+# • `count` – Number of identical instances to cost.
+# • `hours_per_month` – Runtime duration; defaults to 730 for full-month 24×7 operation.
+# • Prices are resolved via Enterprise Price Sheet (if available) or Retail API.
+# • Billing unit: “1 Hour”.
+# =====================================================================================
 from decimal import Decimal
 from typing import Dict, Optional, List
 

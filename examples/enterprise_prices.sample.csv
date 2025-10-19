@@ -2,7 +2,58 @@ ServiceName,SkuName,armRegionName,UnitOfMeasure,UnitPrice,Currency
 Virtual Machines,Standard_D4s_v5,Australia East,1 Hour,0.095,AUD
 App Service,P1v3,Australia East,1 Hour,0.21,AUD
 Azure SQL Database,GP_S_Gen5_4,Australia East,1 Hour,0.60,AUD
-Storage,LRS Hot Data Stored,Australia East,1 GB/Month,0.00085,AUD
-Bandwidth,Data Transfer Out,Australia East,1 GB,0.12,AUD
-Microsoft Fabric,F64,Australia East,1 Hour,2.50,AUD
 Azure SQL Database,Data Stored,Australia East,1 GB/Month,0.0005,AUD
+Storage,LRS Hot Data Stored,Australia East,1 GB/Month,0.00085,AUD
+Storage,LRS Cool Data Stored,Australia East,1 GB/Month,0.0004,AUD
+Storage,Transactions,Australia East,10,000,0.004,AUD
+Azure Cache for Redis,C2,Australia East,1 Hour,0.12,AUD
+Azure Kubernetes Service,Uptime SLA,Australia East,1 Hour,0.10,AUD
+Azure Front Door,Standard Capacity,Australia East,1 Hour,0.05,AUD
+Azure Front Door,Requests,Australia East,1,000,000,0.02,AUD
+Azure Front Door,Data Transfer Out,Australia East,1 GB,0.12,AUD
+Azure Front Door,WAF Policy,Australia East,1/Month,7.50,AUD
+Azure Front Door,WAF Rules,Australia East,1/Month,1.20,AUD
+API Management,Standard Gateway Unit,Australia East,1 Hour,0.45,AUD
+API Management,Requests,Australia East,1,000,000,0.03,AUD
+Container Apps,vCPU Duration,Australia East,1,000,000 Seconds,0.012,AUD
+Container Apps,Memory Duration,Australia East,1,000,000 GB Seconds,0.0028,AUD
+Container Apps,Requests,Australia East,1,000,000,0.04,AUD
+Functions,Execution Time,Australia East,1,000,000 GB Seconds,0.000016,AUD
+Functions,Executions,Australia East,1,000,000,0.25,AUD
+Azure Backup,Backup Storage LRS,Australia East,1 GB/Month,0.0009,AUD
+Azure Backup,Protected Instance Small,Australia East,1/Month,7.00,AUD
+Azure Backup,Protected Instance Medium,Australia East,1/Month,14.00,AUD
+Azure Backup,Protected Instance Large,Australia East,1/Month,25.00,AUD
+Azure Key Vault,Operations,Australia East,10,000,0.03,AUD
+Azure Key Vault,HSM Protected Key,Australia East,1/Month,3.50,AUD
+Microsoft Defender for Cloud,Servers,Australia East,1 Hour,0.0065,AUD
+Microsoft Fabric,F64,Australia East,1 Hour,2.50,AUD
+Microsoft Fabric,F32,Australia East,1 Hour,1.25,AUD
+Azure Synapse Analytics,DW1000c,Australia East,1 Hour,1.20,AUD
+Azure Databricks,Premium DBU,Australia East,1 Hour,0.45,AUD
+Data Factory,Data Movement,Australia East,1 Hour,0.26,AUD
+Data Factory,Pipeline Activities,Australia East,1,000,0.12,AUD
+Event Hubs,Standard Throughput Unit,Australia East,1 Hour,0.13,AUD
+Service Bus,Premium Messaging Unit,Australia East,1 Hour,0.22,AUD
+Event Grid,Operations,Australia East,1,000,000,0.60,AUD
+Azure Cognitive Search,S1 Search Unit,Australia East,1 Hour,0.17,AUD
+Log Analytics,Data Ingested,Australia East,1 GB,0.004,AUD
+Log Analytics,Data Retention,Australia East,1 GB/Month,0.002,AUD
+Application Insights,Data Ingested,Australia East,1 GB,0.005,AUD
+Application Insights,Data Retention,Australia East,1 GB/Month,0.0025,AUD
+DNS,Hosted Zone,Global,1/Month,0.65,AUD
+DNS,DNS Queries,Global,1,000,000,0.05,AUD
+Traffic Manager,Profile,Global,1 Hour,0.0012,AUD
+Traffic Manager,DNS Queries,Global,1,000,000,0.04,AUD
+Load Balancer,Data Processed,Australia East,1 GB,0.0075,AUD
+Load Balancer,Rule Hours,Australia East,1 Hour,0.002,AUD
+Application Gateway,Capacity Unit,Australia East,1 Hour,0.008,AUD
+Application Gateway,Data Processed,Australia East,1 GB,0.005,AUD
+Private Link,Private Endpoint,Australia East,1 Hour,0.009,AUD
+NAT Gateway,Gateway Hours,Australia East,1 Hour,0.045,AUD
+NAT Gateway,Data Processed,Australia East,1 GB,0.05,AUD
+Bandwidth,Data Transfer Out,Australia East,1 GB,0.12,AUD
+Azure Active Directory,External ID MAU,Global,1 User,0.0018,AUD
+Azure Active Directory,External ID MFA,Global,1 User,0.0009,AUD
+Governance,Policy/Advisor,Global,1 Unit,0.00,AUD
+Azure DevOps,Parallel Job,Global,1 Hour,0.00,AUD

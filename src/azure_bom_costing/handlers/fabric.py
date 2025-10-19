@@ -1,3 +1,43 @@
+# =====================================================================================
+# Microsoft Fabric Capacity + OneLake Storage. Example components:
+#
+# Fabric capacity:
+# {
+#   "type": "fabric_capacity",
+#   "sku": "F64",
+#   "hours_per_day": 12,
+#   "days_per_month": 22
+# }
+#
+# OneLake storage:
+# {
+#   "type": "onelake_storage",
+#   "tb_hot": 5,
+#   "tb_cool": 20
+# }
+#
+# Notes:
+# • Models Microsoft Fabric SKU-based capacity (F2–F2048).
+# • Fabric SKUs are billed hourly (“1 Hour” unit) — typically regionless or global.
+# • Tries multiple lookup patterns against Azure Retail and Enterprise APIs to handle
+#   missing or inconsistent catalog entries (e.g. “Microsoft Fabric”, “Fabric Capacity”).
+# • Includes fallback scoring that prioritises:
+#     - Region match
+#     - Unit of measure match (“1 Hour”)
+#     - Fabric keyword and capacity token (e.g., F64, Capacity F64, F64CU)
+# • `hours_per_day` × `days_per_month` approximate active usage hours per billing month.
+# • Enterprise pricing supported via MCA/EA sheets when available.
+#
+# OneLake Storage:
+# • Uses Azure Blob Storage rates (Standard_LRS_Hot / Standard_LRS_Cool equivalents)
+#   to approximate Fabric’s OneLake storage costs.
+# • Each tier’s capacity (hot/cool) priced per GB-month and summed.
+# • Ideal for total-cost modeling of Fabric workspaces, dataflows, and warehouses.
+#
+# Combined usage:
+# • Include both `fabric_capacity` and `onelake_storage` in workloads to represent
+#   compute (Fabric) and data (OneLake) components of your analytics platform.
+# =====================================================================================
 from decimal import Decimal
 from typing import Dict, List
 

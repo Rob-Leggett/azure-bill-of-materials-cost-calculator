@@ -1,5 +1,35 @@
 # =====================================================================================
-# Load Balancer / Application Gateway (v2)
+# Azure Load Balancer (Standard) and Application Gateway v2. Example components:
+#
+# {
+#   "type": "load_balancer",
+#   "sku": "Standard",
+#   "data_processed_gb": 500,
+#   "rules": 5,
+#   "hours_per_month": 730
+# }
+#
+# {
+#   "type": "app_gateway",
+#   "capacity_units": 2,
+#   "data_processed_gb": 1000,
+#   "hours_per_month": 730
+# }
+#
+# Notes:
+# • Models Layer-4 Load Balancer and Layer-7 Application Gateway usage.
+# • `data_processed_gb` – Total outbound data processed (billed per GB).
+# • `rules` – Active Load Balancer rules (billed per rule-hour for some SKUs).
+# • `capacity_units` – Application Gateway v2 capacity units (billed per hour).
+# • `hours_per_month` – Number of active hours per month (default 730).
+# • Billing units:
+#     - Load Balancer Data: “1 GB”
+#     - Load Balancer Rules: “1 Hour”
+#     - App Gateway Capacity Units: “1 Hour”
+#     - App Gateway Data: “1 GB”
+# • Automatically fetches regional consumption rates from Azure Retail API.
+# • Enterprise price sheet lookup supported for enterprise tenants if available.
+# • Used to model web ingress costs when Front Door or WAF aren’t used directly.
 # =====================================================================================
 from decimal import Decimal
 from typing import Dict

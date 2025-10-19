@@ -1,12 +1,51 @@
-# =========================================================
-# API Management
-# component:
-#   { "type":"api_management", "tier":"Developer|Basic|Standard|Premium|Consumption",
-#     "gateway_units": 2, "hours_per_month":730, "calls_per_million": 50 }
+# =====================================================================================
+# Azure API Management (Dedicated and Consumption tiers). Example component:
+# {
+#   "type": "api_management",
+#   "tier": "Standard",
+#   "gateway_units": 2,
+#   "hours_per_month": 730,
+#   "calls_per_million": 50
+# }
+#
 # Notes:
-#   - For Consumption we use per-request only (calls_per_million), no hourly base.
-#   - For Dedicated tiers we price per-unit-hour + optional per-call if catalog exposes it.
-# =========================================================
+# • Models Azure API Management (APIM) pricing across dedicated and consumption tiers.
+# • Consumption tier bills per million requests only.
+# • Developer, Basic, Standard, and Premium tiers bill per Gateway Unit per hour, with optional per-request pricing.
+#
+# • Core parameters:
+#     - `tier` → "Developer", "Basic", "Standard", "Premium", or "Consumption"
+#     - `gateway_units` → Number of active gateway units (applies to dedicated tiers)
+#     - `hours_per_month` → Hours of operation (default 730)
+#     - `calls_per_million` → Request volume (millions of API calls)
+#
+# • Pricing structure:
+#     - serviceName eq 'API Management'
+#     - meterName or skuName contains "Gateway" for unit-hour rates
+#     - meterName or productName contains "Requests" for per-million request rates
+#     - unitOfMeasure = "1 Hour" or "1,000,000"
+#
+# • Enterprise lookup supported:
+#     enterprise_lookup(ent_prices, "API Management", f"{tier} Gateway Unit", region, "1 Hour")
+#     enterprise_lookup(ent_prices, "API Management", "Requests", region, "1,000,000")
+# • Retail fallback queries Azure Retail Prices API for gateway and request meters.
+#
+# • Calculation:
+#     if tier == "Consumption":
+#         total_cost = calls_per_million × rate_per_million_requests
+#     else:
+#         total_cost = (gateway_units × hours_per_month × rate_per_hour)
+#                     + (calls_per_million × rate_per_million_requests)
+#
+# • Example output:
+#     APIM Standard 2x @ 0.41/hr × 730h + 50M req @ 0.03/1M = $620.50
+#
+# • Typical uses:
+#     - Gateway/API proxy hosting for managed APIs
+#     - Dedicated capacity tiers for enterprise environments
+#     - Consumption tier for serverless or lightweight public endpoints
+# • Developer tier is non-production and discounted but modeled identically for cost comparison.
+# =====================================================================================
 from decimal import Decimal
 from typing import Dict
 

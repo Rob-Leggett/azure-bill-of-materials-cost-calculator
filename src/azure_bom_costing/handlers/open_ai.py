@@ -1,3 +1,37 @@
+# =====================================================================================
+# Azure OpenAI Service. Example component:
+# {
+#   "type": "ai_openai",
+#   "deployment": "gpt-4o-mini",
+#   "input_tokens_1k_per_month": 12000,
+#   "output_tokens_1k_per_month": 6000,
+#   "images_generated": 0,
+#   "embeddings_tokens_1k_per_month": 0,
+#   "unit_price_overrides": {
+#     "input_per_1k": 0.0,      # Optional override in AUD
+#     "output_per_1k": 0.0,
+#     "image_each": 0.0,
+#     "embeddings_per_1k": 0.0
+#   }
+# }
+#
+# Notes:
+# • Supports token-based, image, and embedding usage billing for Azure OpenAI models.
+# • `deployment` – Model identifier (e.g. “gpt-4o”, “gpt-4o-mini”, “text-embedding-3-small”).
+# • `input_tokens_1k_per_month` – Prompt tokens (in 1K units).
+# • `output_tokens_1k_per_month` – Completion tokens (in 1K units).
+# • `images_generated` – Number of generated images (billed per image).
+# • `embeddings_tokens_1k_per_month` – Embedding token volume (1K units).
+# • `unit_price_overrides` – Optional structure to manually override per-unit prices
+#   when testing or modelling outside live API rates.
+# • Billing units:
+#     - Input/output tokens: “per 1K tokens”
+#     - Images: “per each”
+#     - Embeddings: “per 1K tokens”
+# • Automatically scores the Azure Retail API catalog for correct meters by direction
+#   (input/output), token type, or image/embedding workloads.
+# • Used to estimate monthly AI cost per model deployment, aligned with Azure pricing.
+# =====================================================================================
 from decimal import Decimal
 from typing import List, Dict, Optional
 

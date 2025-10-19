@@ -1,5 +1,46 @@
 # =====================================================================================
-# Event Hubs (Throughput Units) / Service Bus / Event Grid
+# Event Hubs / Service Bus / Event Grid. Example components:
+#
+# Event Hubs:
+# {
+#   "type": "event_hub",
+#   "tier": "Standard|Dedicated",
+#   "throughput_units": 4,
+#   "hours_per_month": 730
+# }
+#
+# Service Bus:
+# {
+#   "type": "service_bus",
+#   "tier": "Premium|Standard",
+#   "messaging_units": 2,
+#   "hours_per_month": 730
+# }
+#
+# Event Grid:
+# {
+#   "type": "event_grid",
+#   "operations_per_month": 250000000
+# }
+#
+# Notes:
+# • Models Azure messaging and eventing services:
+#     - Event Hubs (Throughput Units)
+#     - Service Bus (Messaging Units)
+#     - Event Grid (Operations)
+# • Billing Units:
+#     - Event Hubs TU: “1 Hour” per Throughput Unit
+#     - Service Bus MU: “1 Hour” per Messaging Unit
+#     - Event Grid Ops: “1,000,000” operations
+# • `tier` determines SKU family (Standard, Premium, or Dedicated).
+# • Pulls prices from Azure Retail API or Enterprise price sheets if available.
+# • Recommended for modeling telemetry, event ingestion, and interservice messaging.
+# • Common usage:
+#     - Event Hubs → ingestion from IoT or app telemetry.
+#     - Service Bus → durable message queues or pub/sub for internal apps.
+#     - Event Grid → event routing and integration with Azure Functions or Logic Apps.
+# • For high-volume systems, combine with Functions / Container Apps / Stream Analytics
+#   components for end-to-end cost modeling.
 # =====================================================================================
 from decimal import Decimal
 from typing import Dict

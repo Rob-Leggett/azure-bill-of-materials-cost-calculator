@@ -1,8 +1,48 @@
-# =========================================================
-# Azure Container Apps (consumption): vCPU-sec, Mem-GB-sec, Requests per 1M
-# component:
-#   { "type":"container_apps", "vcpu_seconds": 3_000_000, "memory_gb_seconds": 6_000_000, "requests_1m": 5 }
-# =========================================================
+# =====================================================================================
+# Azure Container Apps (consumption-based pricing). Example component:
+# {
+#   "type": "container_apps",
+#   "vcpu_seconds": 3_000_000,
+#   "memory_gb_seconds": 6_000_000,
+#   "requests_1m": 5
+# }
+#
+# Notes:
+# • Models serverless Azure Container Apps cost structure (Consumption plan).
+# • Charges are based on three dimensions:
+#     - vCPU Duration (per million seconds)
+#     - Memory Duration (per million GB-seconds)
+#     - HTTP Requests (per 1 million requests)
+#
+# • Core parameters:
+#     - `vcpu_seconds` → Total vCPU time in seconds
+#     - `memory_gb_seconds` → Total memory usage in GB-seconds
+#     - `requests_1m` → Number of HTTP requests (in millions)
+#
+# • Pricing structure (Retail API filters):
+#     - serviceName eq 'Container Apps'
+#     - meterName contains 'vCPU Duration'  →  unitOfMeasure: "1,000,000 Seconds"
+#     - meterName contains 'Memory Duration' → unitOfMeasure: "1,000,000 GB Seconds"
+#     - meterName contains 'Requests'       → unitOfMeasure: "1,000,000"
+#
+# • Enterprise lookup supported:
+#     enterprise_lookup(ent_prices, "Container Apps", "vCPU Duration", region, "1,000,000 Seconds")
+#     enterprise_lookup(ent_prices, "Container Apps", "Memory Duration", region, "1,000,000 GB Seconds")
+#     enterprise_lookup(ent_prices, "Container Apps", "Requests", region, "1,000,000")
+#
+# • Calculation:
+#     total_cost = (vcpu_seconds × rate_per_1M_sec / 1M)
+#                + (memory_gb_seconds × rate_per_1M_GBsec / 1M)
+#                + (requests_1m × rate_per_1M)
+#
+# • Example output:
+#     Container Apps (vCPU:3M s, Mem:6M GB-s, Req:5M) = $15.20
+#
+# • Typical uses:
+#     - Serverless APIs or background workloads on Container Apps (Consumption plan)
+#     - Stateless, auto-scaling microservices without dedicated infrastructure
+# • Premium / Dedicated plans (with vCPU-hrs) should be modeled separately under VM costs.
+# =====================================================================================
 from decimal import Decimal
 from typing import Dict
 

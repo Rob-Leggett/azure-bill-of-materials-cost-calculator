@@ -15,7 +15,11 @@
       "tier": "prod",
       "components": [
         { "type": "app_service", "sku": "P1v3", "instances": 2, "hours_per_month": 730 },
-        { "type": "storage_blob", "sku": "Standard_LRS_Hot", "tb": 1, "transactions_per_month": 300000 }
+        { "type": "storage_blob", "sku": "Standard_LRS_Hot", "tb": 1, "transactions_per_month": 300000 },
+        { "type": "front_door", "tier": "Standard", "hours_per_month": 730, "requests_millions": 200, "egress_gb": 1000, "waf_policies": 1, "waf_rules": 10 },
+        { "type": "api_management", "tier": "Standard", "gateway_units": 2, "hours_per_month": 730, "calls_per_million": 50 },
+        { "type": "redis", "sku": "C2", "instances": 1, "hours_per_month": 730 },
+        { "type": "key_vault", "tier": "Premium", "operations": 500000, "hsm_keys": 5 }
       ]
     },
     {
@@ -29,7 +33,7 @@
       "name": "AI",
       "tier": "prod",
       "components": [
-        { "type": "ai_openai", "deployment": "gpt-4o-mini", "input_tokens_1k_per_month": 18000, "output_tokens_1k_per_month": 9000 }
+        { "type": "ai_openai", "deployment": "gpt-4o-mini", "input_tokens_1k_per_month": 18000, "output_tokens_1k_per_month": 9000, "images_generated": 0, "embeddings_tokens_1k_per_month": 0 }
       ]
     },
     {
@@ -37,35 +41,75 @@
       "tier": "prod",
       "components": [
         { "type": "fabric_capacity", "sku": "F64", "hours_per_day": 16, "days_per_month": 22 },
-        { "type": "onelake_storage", "tb_hot": 10, "tb_cool": 40 }
+        { "type": "onelake_storage", "tb_hot": 10, "tb_cool": 40 },
+        { "type": "synapse_sqlpool", "sku": "DW1000c", "hours_per_month": 200 },
+        { "type": "databricks", "tier": "Premium", "dbu_hours": 500 },
+        { "type": "data_factory", "diu_hours": 200, "activity_runs_1k": 50 },
+        { "type": "event_hub", "tier": "Standard", "throughput_units": 4, "hours_per_month": 730 },
+        { "type": "service_bus", "tier": "Premium", "messaging_units": 2, "hours_per_month": 730 },
+        { "type": "event_grid", "operations_per_month": 200000000 }
       ]
     },
     {
       "name": "Reporting",
       "tier": "prod",
       "components": [
-        { "type": "fabric_capacity", "sku": "F32", "hours_per_day": 12, "days_per_month": 22 }
+        { "type": "fabric_capacity", "sku": "F32", "hours_per_day": 12, "days_per_month": 22 },
+        { "type": "cognitive_search", "sku": "S1", "replicas": 2, "partitions": 1, "hours_per_month": 730 }
       ]
     },
     {
       "name": "Observability",
       "tier": "shared",
       "components": [
-        { "type": "log_analytics", "ingest_gb_per_day": 120, "retention_days": 30 }
+        { "type": "log_analytics", "ingest_gb_per_day": 120, "retention_days": 30 },
+        { "type": "app_insights", "ingest_gb_per_day": 10, "retention_days": 30, "days_per_month": 30, "included_retention_days": 0 },
+        { "type": "defender", "plan": "Servers", "resource_count": 20, "hours_per_month": 730 }
       ]
     },
     {
       "name": "LogsArchive",
       "tier": "shared",
       "components": [
-        { "type": "storage", "sku": "Standard_LRS_Cool", "tb": 4, "transactions_per_month": 400000 }
+        { "type": "storage_blob", "sku": "Standard_LRS_Cool", "tb": 4, "transactions_per_month": 400000 },
+        { "type": "backup", "backup_storage_tb": 2, "redundancy": "LRS", "instances_small": 5, "instances_medium": 2 }
       ]
     },
     {
-      "name": "CorpNetwork",
+      "name": "Networking",
       "tier": "shared",
       "components": [
-        { "type": "bandwidth_egress", "gb_per_month": 1800 }
+        { "type": "bandwidth_egress", "gb_per_month": 1800 },
+        { "type": "private_networking", "private_endpoints": 6, "pe_hours": 730, "nat_gateways": 2, "nat_hours": 730, "nat_data_gb": 1500 },
+        { "type": "load_balancer", "sku": "Standard", "data_processed_gb": 800, "rules": 5, "hours_per_month": 730 },
+        { "type": "app_gateway", "capacity_units": 2, "data_processed_gb": 500, "hours_per_month": 730 },
+        { "type": "dns_tm", "dns_zones": 5, "dns_queries_millions": 30, "tm_profiles": 2, "tm_queries_millions": 20, "hours_per_month": 730 }
+      ]
+    },
+    {
+      "name": "AKS_And_Backend",
+      "tier": "prod",
+      "components": [
+        { "type": "aks_cluster", "uptime_sla": true, "hours_per_month": 730 },
+        { "type": "vm", "armSku": "Standard_D4s_v5", "count": 3, "os": "Linux", "hours_per_month": 730 },
+        { "type": "sql_paas", "sku": "GP_P_Gen5_8", "max_gb": 512, "ha": true }
+      ]
+    },
+    {
+      "name": "IntegrationAndQueues",
+      "tier": "shared",
+      "components": [
+        { "type": "functions", "gb_seconds": 250000000, "executions": 200000000 },
+        { "type": "storage_queue", "operations_per_month": 120000000 },
+        { "type": "storage_table", "operations_per_month": 80000000 },
+        { "type": "fileshare", "tb": 3 }
+      ]
+    },
+    {
+      "name": "PlatformGovernance",
+      "tier": "shared",
+      "components": [
+        { "type": "governance" }
       ]
     }
   ]

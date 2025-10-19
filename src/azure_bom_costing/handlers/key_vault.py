@@ -1,8 +1,24 @@
-# =========================================================
-# Key Vault
-# component:
-#   { "type":"key_vault", "tier":"Standard|Premium", "operations": 500000, "hsm_keys": 5 }
-# =========================================================
+# =====================================================================================
+# Azure Key Vault. Example component:
+# {
+#   "type": "key_vault",
+#   "tier": "Standard|Premium",
+#   "operations": 500000,
+#   "hsm_keys": 5
+# }
+#
+# Notes:
+# • Models Azure Key Vault operational and HSM-key storage costs.
+# • `tier` – "Standard" (software-protected) or "Premium" (HSM-protected keys).
+# • `operations` – Number of vault operations per month (billed per 10,000 ops).
+# • `hsm_keys` – Number of HSM-protected keys (billed per key per month, Premium only).
+# • Billing units:
+#     - Operations: “per 10,000 operations”
+#     - HSM Protected Keys: “per key per month”
+# • For Premium tier, adds key-based HSM charge on top of operation charges.
+# • Automatically retrieves regional consumption rates from Azure Retail API.
+# • Typical usage includes secrets, certificates, and key operations for app services.
+# =====================================================================================
 from decimal import Decimal
 from typing import Dict
 

@@ -1,7 +1,44 @@
-# =========================================================
-# Azure Cognitive Search
-# component: { "type":"cognitive_search", "sku":"S1|S2|S3|Basic", "replicas": 2, "partitions": 1, "hours_per_month":730 }
-# =========================================================
+# =====================================================================================
+# Azure Cognitive Search (Dedicated Search Units). Example component:
+# {
+#   "type": "cognitive_search",
+#   "sku": "S1",
+#   "replicas": 2,
+#   "partitions": 1,
+#   "hours_per_month": 730
+# }
+#
+# Notes:
+# • Models Azure Cognitive Search capacity-based billing using Search Units (SUs).
+# • Each Search Unit = 1 partition × 1 replica.
+# • Total SUs = replicas × partitions; billed hourly per SKU (e.g., S1, S2, S3, Basic).
+#
+# • Core parameters:
+#     - `sku` → Search tier (Basic, S1, S2, S3, etc.)
+#     - `replicas` → Number of replicas for query scaling & high availability
+#     - `partitions` → Number of partitions for index storage/scaling
+#     - `hours_per_month` → Total billed hours (default 730)
+#
+# • Pricing structure:
+#     - serviceName eq 'Search'
+#     - meterName contains '<SKU>' or 'Search Unit'
+#     - unitOfMeasure = "1 Hour"
+#
+# • Enterprise lookup supported:
+#     enterprise_lookup(ent_prices, "Search", f"{sku} Search Unit", region, "1 Hour")
+# • Retail fallback queries the Azure Retail Prices API if enterprise sheet unavailable.
+#
+# • Calculation:
+#     total_cost = rate_per_hour × replicas × partitions × hours
+#
+# • Example output:
+#     Cog Search S1 SU:2 @ 0.50/hr × 730h = $730.00
+#
+# • Typical uses:
+#     - Full-text indexing and search in web, enterprise, or e-commerce applications
+#     - Scaling search workloads via replicas (query load) and partitions (index volume)
+# • Excludes outbound egress or AI enrichment pipelines, which are billed separately.
+# =====================================================================================
 from decimal import Decimal
 from typing import Dict
 

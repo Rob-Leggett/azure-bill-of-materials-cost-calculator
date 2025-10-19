@@ -1,3 +1,28 @@
+# =====================================================================================
+# Azure Log Analytics (Data Ingestion + Retention). Example component:
+# {
+#   "type": "log_analytics",
+#   "ingest_gb_per_day": 50,
+#   "retention_days": 30,          # Total retention (hot data)
+#   "included_retention_days": 31, # Default included retention
+#   "unit_price_override": null,   # Optional per-GB ingest override
+#   "retention_price_override": null  # Optional per-GB-month override
+# }
+#
+# Notes:
+# • Models Azure Monitor / Log Analytics workspace costs for ingestion and retention.
+# • `ingest_gb_per_day` – Daily data volume ingested into Log Analytics (in GB).
+# • `retention_days` – Total data retention period in days (default 30).
+# • `included_retention_days` – Days of hot data retention included for free (default 31).
+# • `unit_price_override` – Optional manual override for ingest price per GB.
+# • `retention_price_override` – Optional manual override for retention price per GB-month.
+# • Billing units:
+#     - Ingestion: “per GB”
+#     - Retention: “per GB-month” (charged only for days beyond included retention)
+# • Total charge = Ingest cost + Retention cost (if retention_days > included_days)
+# • Useful for Observability, Security, and Application Insights backend logs.
+# • Automatically fetches regional or global Log Analytics rates from Azure Retail API.
+# =====================================================================================
 from decimal import Decimal
 from typing import List, Optional, Dict
 

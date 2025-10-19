@@ -1,3 +1,31 @@
+# =====================================================================================
+# Bandwidth / Egress (Internet Data Transfer Out). Example component:
+# {
+#   "type": "bandwidth_egress",
+#   "gb_per_month": 1200
+# }
+#
+# Notes:
+# • Models outbound Internet data transfer costs (“Data Transfer Out”) from Azure regions.
+# • Pricing is region- and zone-based. Azure groups egress pricing into three geographic
+#   zones with differing per-GB rates:
+#     - Zone 1: North America, Western Europe, UK, Canada, France, Germany, etc.
+#     - Zone 2: Japan, Korea, SE Asia, India, Australia SE.
+#     - Zone 3: Australia East, New Zealand North, Brazil South, South Africa North, etc.
+# • Uses `_egress_zone_for_region()` to automatically map ARM display region → Azure egress zone label.
+# • Query and scoring logic prefers:
+#     1. “Internet” / “Data Transfer Out” labeled rows
+#     2. Correct zone keyword (e.g., “Zone 3”)
+#     3. Exact region match when present
+#     4. “1 GB” unit of measure
+# • Excludes non-Internet rows (ExpressRoute, Private Link, VPN, Front Door, CDN, etc.).
+# • Falls back to broader “Outbound” or “Data Transfer Out” entries if zone- or region-
+#   specific rows are missing.
+# • Enterprise pricing lookup supported (rare for bandwidth).
+# • Safe fallback: if no matching catalog entry is found, returns zero cost with a message.
+# • Example output:
+#       Egress 1200GB @ 0.146733/GB (Bandwidth - Routing Preference: Internet / Standard Data Transfer Out)
+# =====================================================================================
 from decimal import Decimal
 from typing import List, Optional, Dict
 
