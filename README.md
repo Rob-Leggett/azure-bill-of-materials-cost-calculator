@@ -142,7 +142,7 @@ azure-bom --enterprise-csv examples/enterprise_prices.sample.csv --bom examples/
       ]
     },
     {
-      "name": "AKS_And_Backend",
+      "name": "AKSAndBackend",
       "tier": "prod",
       "components": [
         { "type": "aks_cluster", "uptime_sla": true, "hours_per_month": 730 },
@@ -178,16 +178,16 @@ azure-bom --enterprise-csv examples/enterprise_prices.sample.csv --bom examples/
 Workload                  Tier            PAYG est.        With Opt.
 
 -- PartnerPortal components --
-  • app_service         AppService P1v3 x2 @ 5.399771/hr                                        = $7,883.67
+  • app_service         AppService P1v3 x2 @ 0.281238/hr                                        = $410.61
   • storage_blob        Storage Standard_LRS_Hot 1TB @ 0.030569/GB-mo (+tx)                     = $31.64
-  • front_door          Front Door Standard (base+req+egress+WAF)                               = $0.00
+  • front_door          Front Door Standard (base not found; catalog uses classic/global wording)  = $0.00
   • api_management      APIM Standard 2x @ 0.523454/hr × 730h + 50M req @ 0/1M                  = $764.24
-  • redis               Redis C2 x1 @ 0/hr × 730h                                               = $0.00
-  • key_vault           Key Vault Premium (ops+keys)                                            = $2.29
-PartnerPortal             prod            $8,681.84        $7,218.95
+  • redis               Redis C2 x1 @ 0.171188/hr × 730h                                        = $124.97
+  • key_vault           Key Vault Premium (ops:500000 @ 0.045854/10k, hsm:5 @ 7.642339/key-mo)  = $40.50
+PartnerPortal             prod            $1,371.96        $1,140.78
 
 -- Identity components --
-  • entra_external_id   Entra External ID base:50000 @ 0/MAU mfa:90% @ 0/MAU (premium)          = $0.00
+  • entra_external_id   Entra External ID base:0 (of 50000; 50000 free) @ 0/MAU[retail] mfa:90% @ 0/MAU[retail] (premium)  = $0.00
 Identity                  shared              $0.00            $0.00
 
 -- AI components --
@@ -197,13 +197,13 @@ AI                        prod               $13.62           $11.32
 -- DataPlatform components --
   • fabric_capacity     Fabric F64 @ 15.484906/hr × 16h × 22d                                   = $5,450.69
   • onelake_storage     OneLake Hot:10TB Cool:40TB                                              = $1,001.69
-  • synapse_sqlpool     Synapse SQLPool DW1000c @ 258.311043/DWU-hr × 1000 DWU × 200h           = $51,662,208.60
+  • synapse_sqlpool     Synapse SQLPool DW1000c @ 0.0258311/DWU-hr × 1000 DWU × 200h (Azure Synapse Analytics Dedicated SQL Pool / 100 DWUs / 1/Hour)  = $5,166.22
   • databricks          Databricks Premium @ 0.22927/DBU-hr × 500h                              = $114.64
   • data_factory        Data Factory (DIU:200h, Activities:50k)                                 = $0.00
   • event_hub           Event Hubs Standard TU @ 0.045854/hr × 4 × 730h                         = $133.89
   • service_bus         Service Bus Premium MU @ 1.417654/hr × 2 × 730h                         = $2,069.77
   • event_grid          Event Grid 200000000 ops @ 0.091708/1M                                  = $18.34
-DataPlatform              prod       $51,670,997.62   $42,964,434.52
+DataPlatform              prod           $13,955.24       $11,603.78
 
 -- Reporting components --
   • fabric_capacity     Fabric F32 @ 0.775638/hr × 12h × 22d                                    = $204.77
@@ -223,17 +223,17 @@ LogsArchive               shared             $69.31           $57.63
 
 -- Networking components --
   • bandwidth_egress    Egress 1800GB @ 0.146733/GB (Bandwidth - Routing Preference: Internet / Standard Data Transfer Out)  = $264.12
-  • private_networking  Private Networking (PE + NAT)                                           = $0.00
-  • load_balancer       Load Balancer Standard (data:800GB, rules:5 × 730h)                     = $0.00
+  • private_networking  Private Networking (PE + NAT)                                           = $103.17
+  • load_balancer       Load Balancer Standard (data:800GB, rules:5 × 730h)                     = $145.59
   • app_gateway         App Gateway v2 (CU:2 × 730h, data:500GB)                                = $23.97
   • dns_tm              DNS + Traffic Manager                                                   = $16.51
-Networking                shared            $304.59          $253.27
+Networking                shared            $553.35          $460.11
 
--- AKS_And_Backend components --
+-- AKSAndBackend components --
   • aks_cluster         AKS Uptime SLA @ 0.152847/hr × 730h                                     = $111.58
   • vm                  VM Standard_D4s_v5 x3 @ 0.64807/hr                                      = $1,419.27
-  • sql_paas            SQL GP_P_Gen5_8 @ 22.149087/vCore-hr × 8 vC (+storage approx)           = $194,026.00
-AKS_And_Backend           prod          $195,556.85      $162,605.52
+  • sql_paas            SQL GP_P_Gen5_8 @ 0.949013/vCore-hr × 8 vC (+storage approx)            = $8,313.35
+AKSAndBackend             prod            $9,844.21        $8,185.46
 
 -- IntegrationAndQueues components --
   • functions           Functions (GB-s + execs)                                                = $0.02
@@ -247,7 +247,7 @@ IntegrationAndQueues      shared          $1,794.93        $1,492.49
 PlatformGovernance        shared              $0.00            $0.00
 
 === Grand Total (Monthly, With Optimisations) ===
-$43,136,727.06 AUD
+$23,604.93 AUD
 ```
 
 ## Notes

@@ -21,7 +21,7 @@
 from decimal import Decimal
 from typing import Dict, List
 
-from ..helpers import _d, _arm_region, _pick, _dedup_merge
+from ..helpers import _d, _arm_region, _dedup_merge
 from ..pricing_sources import enterprise_lookup, retail_fetch_items
 from ..types import Key
 

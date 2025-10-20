@@ -87,7 +87,7 @@
       ]
     },
     {
-      "name": "AKS_And_Backend",
+      "name": "AKSAndBackend",
       "tier": "prod",
       "components": [
         { "type": "aks_cluster", "uptime_sla": true, "hours_per_month": 730 },

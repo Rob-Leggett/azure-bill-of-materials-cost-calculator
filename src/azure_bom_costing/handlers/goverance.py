@@ -22,4 +22,10 @@ from ..helpers import _d
 from ..types import Key
 
 def price_governance(component, region, currency, ent_prices: Dict[Key, Decimal]):
+    """
+    Intentional $0:
+      - Azure Policy, Advisor, Blueprints, Resource Graph, Management Groups are control-plane features.
+      - They do not have consumption meters in the Retail Prices API or enterprise price sheets.
+      - Security/Defender charges are modelled separately.
+    """
     return _d(0), "Governance (Policy/Advisor/Blueprints typically $0)"

@@ -71,3 +71,10 @@ def _d(val, default=Decimal(0)) -> Decimal:
         return Decimal(str(val))
     except Exception:
         return Decimal(default)
+
+def _has_price(i: dict) -> bool:
+    try:
+        return _d(i.get("retailPrice", 0)) > 0
+    except Exception:
+        return False
+

@@ -33,61 +33,150 @@
 # • Used to estimate monthly AI cost per model deployment, aligned with Azure pricing.
 # =====================================================================================
 from decimal import Decimal
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Tuple
 
 from ..helpers import _d, _per_count_from_text, _text_fields, _arm_region
-from ..pricing_sources import retail_fetch_items
+from ..pricing_sources import retail_fetch_items, enterprise_lookup
 from ..types import Key
 
 # ---------- Azure OpenAI ----------
-def _pick_openai_rate(items: List[dict], want_tokens: bool, direction: Optional[str] = None, want_images: bool = False, want_embeddings: bool = False) -> Optional[dict]:
+_SERVICE_CANDIDATES = ["Azure OpenAI", "Azure AI Services", "Cognitive Services"]
+
+def _ent_lookup_many(ent_prices: Dict[Key, Decimal],
+                     services: List[str],
+                     sku_candidates: List[str],
+                     region: str,
+                     uom_candidates: List[str]) -> Optional[Tuple[Decimal, str, str]]:
     """
-    Score Azure OpenAI price rows for input/output tokens, images, or embeddings.
+    Try multiple (service, sku, uom) combinations against enterprise sheet.
+    Returns (price, matched_sku, matched_uom) on first hit.
     """
-    if not items:
-        return None
+    for svc in services:
+        for sku in sku_candidates:
+            for uom in uom_candidates:
+                ent = enterprise_lookup(ent_prices, svc, sku, region, uom)
+                if ent is not None:
+                    return ent, sku, uom
+                # Some sheets omit region:
+                ent = enterprise_lookup(ent_prices, svc, sku, "", uom)
+                if ent is not None:
+                    return ent, sku, uom
+    return None
+
+
+def _normalize_per(unit_price: Decimal, uom: str, sku_text: str, target_per: int) -> Decimal:
+    """
+    Normalize a price expressed as "per <n>" to a desired unit size (target_per).
+    Example: if uom is "1,000" and target_per=1000, it's already normalized.
+             if uom is "1" and target_per=1000, multiply by 1000.
+    """
+    per = _per_count_from_text(uom or "", {"skuName": sku_text}) or _d(0)
+    if per <= 0:
+        # Try extracting from sku/product text if UOM is unclear
+        per = _per_count_from_text("", {"skuName": sku_text}) or _d(target_per)
+    return unit_price * (_d(target_per) / per)
+
+
+def _build_sku_candidates(deployment: str, kind: str) -> List[str]:
+    """
+    Generate likely enterprise SKU names. `kind` is one of: 'input', 'output', 'image', 'embed'.
+    """
+    dep = (deployment or "").strip()
+    kws = {
+        "input": ["Input Tokens", "Prompt Tokens", "Tokens - Input", "Tokens (Input)", "Input"],
+        "output": ["Output Tokens", "Completion Tokens", "Tokens - Output", "Tokens (Output)", "Output"],
+        "image": ["Image Generation", "Images", "Image", "DALL-E"],
+        "embed": ["Embeddings", "Embedding Tokens", "Text Embedding", "Embeddings Tokens"],
+    }[kind]
+
+    variants = []
+    for k in kws:
+        if dep:
+            variants += [
+                f"{dep} {k}",
+                f"{dep} - {k}",
+                f"{k} - {dep}",
+                f"{k} ({dep})",
+            ]
+        variants.append(k)
+    # De-dup while preserving order
+    seen, out = set(), []
+    for v in variants:
+        if v not in seen:
+            out.append(v); seen.add(v)
+    return out
+
+
+def _uom_candidates(kind: str) -> List[str]:
+    if kind in ("input", "output", "embed"):
+        return ["1,000", "1000", "1K", "per 1K", "Per 1K Tokens", "1K tokens", "Per 1,000"]
+    if kind == "image":
+        return ["1", "Each", "1 Each", "Per Image"]
+    return ["1"]
+
+
+def _score_openai_retail_row(i: dict,
+                             want_tokens: bool,
+                             direction: Optional[str] = None,
+                             want_images: bool = False,
+                             want_embeddings: bool = False) -> int:
+    """Score retail rows for Azure OpenAI."""
+    price = _d(i.get("retailPrice", 0))
+    if price <= 0:
+        return -999
+
+    txt = " ".join([
+        i.get("serviceName",""), i.get("productName",""),
+        i.get("skuName",""), i.get("meterName","")
+    ]).lower()
+
+    s = 0
+    if "openai" in txt or "azure ai services" in txt or "cognitive services" in txt:
+        s += 3
+    if want_tokens and ("token" in txt or "1k" in txt or "per 1k" in txt):
+        s += 6
+    if want_images and "image" in txt:
+        s += 6
+    if want_embeddings and "embedding" in txt:
+        s += 6
 
     dir_l = (direction or "").lower()
-
-    def score(i: dict) -> int:
-        txt = " ".join([
-            i.get("serviceName",""), i.get("productName",""),
-            i.get("skuName",""), i.get("meterName","")
-        ]).lower()
-        s = 0
-        if "openai" in txt or "azure ai services" in txt:
-            s += 3
-        if want_tokens and ("token" in txt or "per 1k" in txt or "1k tokens" in txt):
-            s += 6
-        if want_images and "image" in txt:
-            s += 6
-        if want_embeddings and ("embedding" in txt):
-            s += 6
-        if dir_l:
-            if dir_l in txt:
-                s += 4
-            # common variants
-            if dir_l == "input" and ("prompt" in txt or "input" in txt):
-                s += 2
-            if dir_l == "output" and ("completion" in txt or "output" in txt):
-                s += 2
-        # prefer explicit 1K-style UOMs
-        u = (i.get("unitOfMeasure","") or "").lower()
-        if "1k" in u or "1,000" in u or "1000" in u:
+    if dir_l:
+        if dir_l in txt:
+            s += 4
+        if dir_l == "input" and ("prompt" in txt or "input" in txt):
             s += 2
-        # positive price only
-        if _d(i.get("retailPrice", 0)) <= 0:
-            s -= 100
-        return s
+        if dir_l == "output" and ("completion" in txt or "output" in txt):
+            s += 2
 
-    candidates = [i for i in items if _d(i.get("retailPrice", 0)) > 0]
-    if not candidates:
+    # Prefer clear UOMs
+    u = (i.get("unitOfMeasure","") or "").lower()
+    if "1k" in u or "1,000" in u or "1000" in u:
+        s += 2
+    if want_images and (u in {"1", "each", "1 each"}):
+        s += 2
+
+    return s
+
+
+def _retail_pick_openai(items: List[dict], want_tokens: bool,
+                        direction: Optional[str] = None,
+                        want_images: bool = False,
+                        want_embeddings: bool = False) -> Optional[dict]:
+    rows = [i for i in items if _d(i.get("retailPrice", 0)) > 0]
+    if not rows:
         return None
-    return sorted(candidates, key=score, reverse=True)[0]
+    rows.sort(key=lambda r: _score_openai_retail_row(
+        r, want_tokens, direction, want_images, want_embeddings
+    ), reverse=True)
+    return rows[0]
+
+
+# ---------- main ----------
 
 def price_ai_openai(component, region, currency, ent_prices: Dict[Key, Decimal]):
     """
-    component schema (suggested):
+    component schema:
       {
         "type": "ai_openai",
         "deployment": "gpt-4o-mini",
@@ -95,17 +184,11 @@ def price_ai_openai(component, region, currency, ent_prices: Dict[Key, Decimal])
         "output_tokens_1k_per_month": 6000,
         "images_generated": 0,
         "embeddings_tokens_1k_per_month": 0,
-        "unit_price_overrides": {
-            "input_per_1k": 0.0,     # optional AUD override
-            "output_per_1k": 0.0,
-            "image_each": 0.0,
-            "embeddings_per_1k": 0.0
-        }
+        "unit_price_overrides": { "input_per_1k": 0, "output_per_1k": 0, "image_each": 0, "embeddings_per_1k": 0 }
       }
     """
-    service_names = ["Azure OpenAI", "Azure AI Services", "Cognitive Services"]
-    deployment = component.get("deployment", "")
-    dep_l = (deployment or "").lower()
+    deployment = (component.get("deployment") or "").strip()
+    dep_l = deployment.lower()
 
     # Volumes
     in_1k  = _d(component.get("input_tokens_1k_per_month", 0))
@@ -113,7 +196,7 @@ def price_ai_openai(component, region, currency, ent_prices: Dict[Key, Decimal])
     img_n  = _d(component.get("images_generated", 0))
     emb_1k = _d(component.get("embeddings_tokens_1k_per_month", 0))
 
-    # Optional per-meter overrides
+    # Overrides
     ov = component.get("unit_price_overrides", {}) or {}
     in_override  = ov.get("input_per_1k")
     out_override = ov.get("output_per_1k")
@@ -122,18 +205,24 @@ def price_ai_openai(component, region, currency, ent_prices: Dict[Key, Decimal])
 
     arm_region = _arm_region(region)
 
-    def fetch_openai_chunks() -> List[dict]:
+    # Pre-fetch retail chunks once (covers regioned + global across service name variants)
+    def fetch_openai_retail() -> List[dict]:
         filters: List[str] = []
-        # Regioned tries
-        for svc in service_names:
+        for svc in _SERVICE_CANDIDATES:
+            # Regioned
             filters.append(f"serviceName eq '{svc}' and armRegionName eq '{arm_region}' and priceType eq 'Consumption'")
             if deployment:
-                filters.append(f"serviceName eq '{svc}' and armRegionName eq '{arm_region}' and priceType eq 'Consumption' and (contains(productName,'{deployment}') or contains(skuName,'{deployment}') or contains(meterName,'{deployment}'))")
-        # Global tries (many OpenAI rows omit region)
-        for svc in service_names:
+                filters.append(
+                    f"serviceName eq '{svc}' and armRegionName eq '{arm_region}' and priceType eq 'Consumption' "
+                    f"and (contains(productName,'{deployment}') or contains(skuName,'{deployment}') or contains(meterName,'{deployment}'))"
+                )
+            # Global
             filters.append(f"serviceName eq '{svc}' and priceType eq 'Consumption'")
             if deployment:
-                filters.append(f"serviceName eq '{svc}' and priceType eq 'Consumption' and (contains(productName,'{deployment}') or contains(skuName,'{deployment}') or contains(meterName,'{deployment}'))")
+                filters.append(
+                    f"serviceName eq '{svc}' and priceType eq 'Consumption' "
+                    f"and (contains(productName,'{deployment}') or contains(skuName,'{deployment}') or contains(meterName,'{deployment}'))"
+                )
 
         items: List[dict] = []
         seen = set()
@@ -147,82 +236,133 @@ def price_ai_openai(component, region, currency, ent_prices: Dict[Key, Decimal])
                         items.append(it)
             except Exception:
                 pass
-        # filter by deployment string lightly if provided (helps reduce cross-model collisions)
+
+        # If a deployment string exists, lightly narrow by it (but keep some breadth)
         if deployment:
             narrowed = [i for i in items if dep_l in _text_fields(i)]
             if narrowed:
                 items = narrowed
         return [i for i in items if _d(i.get("retailPrice", 0)) > 0]
 
-    items = fetch_openai_chunks()
+    retail_items = fetch_openai_retail()
 
     total = _d(0)
-    details: List[str] = []
+    parts: List[str] = []
 
-    # ---- Input tokens
+    # ----- INPUT TOKENS (per 1k)
     if in_1k > 0:
         if in_override is not None:
-            unit = _d(in_override)
+            unit_in_1k = _d(in_override)
         else:
-            row = _pick_openai_rate(items, want_tokens=True, direction="input")
-            if not row:
-                row = _pick_openai_rate(items, want_tokens=True)  # fallback
-            unit = _d(row.get("retailPrice", 0)) if row else _d(0)
-            # Normalize to per 1k if UOM is different
-            per = _per_count_from_text(row.get("unitOfMeasure","") if row else "", row or {})
-            if per != 1000:
-                # unit is per 'per' tokens; we want per 1k
-                unit = unit * (_d(1000) / per)
-        part = unit * in_1k
-        total += part
-        details.append(f"in:{in_1k}k @ {unit}/1k")
+            # Enterprise first
+            ent_hit = _ent_lookup_many(
+                ent_prices,
+                _SERVICE_CANDIDATES,
+                _build_sku_candidates(deployment, "input"),
+                region,
+                _uom_candidates("input"),
+            )
+            if ent_hit:
+                ent_price, ent_sku, ent_uom = ent_hit
+                unit_in_1k = _normalize_per(ent_price, ent_uom, ent_sku, 1000)
+            else:
+                # Retail fallback
+                row = _retail_pick_openai(retail_items, want_tokens=True, direction="input")
+                if not row:
+                    row = _retail_pick_openai(retail_items, want_tokens=True)
+                unit_in_1k = _normalize_per(
+                    _d(row.get("retailPrice", 0)) if row else _d(0),
+                    (row.get("unitOfMeasure","") if row else ""),
+                    " ".join([row.get("skuName",""), row.get("meterName","")]) if row else "",
+                    1000
+                )
+        cost = unit_in_1k * in_1k
+        total += cost
+        parts.append(f"in:{in_1k}k @ {unit_in_1k}/1k")
 
-    # ---- Output tokens
+    # ----- OUTPUT TOKENS (per 1k)
     if out_1k > 0:
         if out_override is not None:
-            unit = _d(out_override)
+            unit_out_1k = _d(out_override)
         else:
-            row = _pick_openai_rate(items, want_tokens=True, direction="output")
-            if not row:
-                row = _pick_openai_rate(items, want_tokens=True)
-            unit = _d(row.get("retailPrice", 0)) if row else _d(0)
-            per = _per_count_from_text(row.get("unitOfMeasure","") if row else "", row or {})
-            if per != 1000:
-                unit = unit * (_d(1000) / per)
-        part = unit * out_1k
-        total += part
-        details.append(f"out:{out_1k}k @ {unit}/1k")
+            ent_hit = _ent_lookup_many(
+                ent_prices,
+                _SERVICE_CANDIDATES,
+                _build_sku_candidates(deployment, "output"),
+                region,
+                _uom_candidates("output"),
+            )
+            if ent_hit:
+                ent_price, ent_sku, ent_uom = ent_hit
+                unit_out_1k = _normalize_per(ent_price, ent_uom, ent_sku, 1000)
+            else:
+                row = _retail_pick_openai(retail_items, want_tokens=True, direction="output")
+                if not row:
+                    row = _retail_pick_openai(retail_items, want_tokens=True)
+                unit_out_1k = _normalize_per(
+                    _d(row.get("retailPrice", 0)) if row else _d(0),
+                    (row.get("unitOfMeasure","") if row else ""),
+                    " ".join([row.get("skuName",""), row.get("meterName","")]) if row else "",
+                    1000
+                )
+        cost = unit_out_1k * out_1k
+        total += cost
+        parts.append(f"out:{out_1k}k @ {unit_out_1k}/1k")
 
-    # ---- Images
+    # ----- IMAGES (per each)
     if img_n > 0:
         if img_override is not None:
-            unit = _d(img_override)
+            unit_img = _d(img_override)
         else:
-            row = _pick_openai_rate(items, want_tokens=False, want_images=True)
-            unit = _d(row.get("retailPrice", 0)) if row else _d(0)
-            # images are typically per each
-            per = _per_count_from_text(row.get("unitOfMeasure","") if row else "", row or {})
-            if per != 1:
-                unit = unit / per
-        part = unit * img_n
-        total += part
-        details.append(f"img:{img_n} @ {unit}/ea")
+            ent_hit = _ent_lookup_many(
+                ent_prices,
+                _SERVICE_CANDIDATES,
+                _build_sku_candidates(deployment, "image"),
+                region,
+                _uom_candidates("image"),
+            )
+            if ent_hit:
+                ent_price, ent_sku, ent_uom = ent_hit
+                unit_img = _normalize_per(ent_price, ent_uom, ent_sku, 1)
+            else:
+                row = _retail_pick_openai(retail_items, want_tokens=False, want_images=True)
+                unit_img = _normalize_per(
+                    _d(row.get("retailPrice", 0)) if row else _d(0),
+                    (row.get("unitOfMeasure","") if row else ""),
+                    " ".join([row.get("skuName",""), row.get("meterName","")]) if row else "",
+                    1
+                )
+        cost = unit_img * img_n
+        total += cost
+        parts.append(f"img:{img_n} @ {unit_img}/ea")
 
-    # ---- Embeddings
+    # ----- EMBEDDINGS (per 1k)
     if emb_1k > 0:
         if emb_override is not None:
-            unit = _d(emb_override)
+            unit_emb_1k = _d(emb_override)
         else:
-            row = _pick_openai_rate(items, want_tokens=False, want_embeddings=True)
-            unit = _d(row.get("retailPrice", 0)) if row else _d(0)
-            per = _per_count_from_text(row.get("unitOfMeasure","") if row else "", row or {})
-            if per != 1000:
-                unit = unit * (_d(1000) / per)
-        part = unit * emb_1k
-        total += part
-        details.append(f"emb:{emb_1k}k @ {unit}/1k")
+            ent_hit = _ent_lookup_many(
+                ent_prices,
+                _SERVICE_CANDIDATES,
+                _build_sku_candidates(deployment, "embed"),
+                region,
+                _uom_candidates("embed"),
+            )
+            if ent_hit:
+                ent_price, ent_sku, ent_uom = ent_hit
+                unit_emb_1k = _normalize_per(ent_price, ent_uom, ent_sku, 1000)
+            else:
+                row = _retail_pick_openai(retail_items, want_tokens=False, want_embeddings=True)
+                unit_emb_1k = _normalize_per(
+                    _d(row.get("retailPrice", 0)) if row else _d(0),
+                    (row.get("unitOfMeasure","") if row else ""),
+                    " ".join([row.get("skuName",""), row.get("meterName","")]) if row else "",
+                    1000
+                )
+        cost = unit_emb_1k * emb_1k
+        total += cost
+        parts.append(f"emb:{emb_1k}k @ {unit_emb_1k}/1k")
 
-    if not details:
+    if not parts:
         return _d(0), "Azure OpenAI (no usage provided)"
-    return total, "OpenAI " + " ".join(details)
-
+    return total, "OpenAI " + " ".join(parts)
