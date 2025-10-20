@@ -37,6 +37,9 @@ from ..helpers import _d, _pick, _arm_region, _dedup_merge
 from ..pricing_sources import retail_pick, retail_fetch_items, enterprise_lookup
 from ..types import Key
 
+def _uom_is(i: dict, want: str) -> bool:
+    return ((i.get("unitOfMeasure") or "").strip().lower() == want.strip().lower())
+
 def _fd_is_noise(i: dict) -> bool:
     txt = " ".join([(i.get("productName") or ""), (i.get("skuName") or ""), (i.get("meterName") or "")]).lower()
     return any(k in txt for k in ["request", "data transfer", "egress", "waf", "rule set", "cdn"])
@@ -53,7 +56,7 @@ def _score_fd_base(i: dict, arm_region: str, tier_l: str) -> int:
         i.get("skuName",""), i.get("meterName","")
     ]).lower()
     s = 0
-    if (i.get("unitOfMeasure") or "") == "1 Hour": s += 6
+    if _uom_is(i, "1 Hour"): s += 6
     armn = (i.get("armRegionName") or "").lower()
     if armn == arm_region: s += 4
     if armn in ("", "global"): s += 2
@@ -65,10 +68,15 @@ def _score_fd_base(i: dict, arm_region: str, tier_l: str) -> int:
 
 def _find_fd_base_unit(tier: str, arm_region: str, currency: str) -> Optional[Decimal]:
     tier_l = tier.lower()
-    svc_names = ["Azure Front Door", "Frontdoor"]
+    svc_names = [
+        "Azure Front Door", "Frontdoor",
+        "Front Door",                       # older catalog short name
+        "Azure Front Door (classic)",       # classic label
+        "Front Door (classic)"              # classic short label
+    ]
 
     filters: List[str] = []
-    # Regioned first (many SKUs still list Global, but try it)
+    # Regioned first
     for svc in svc_names:
         filters += [
             (f"serviceName eq '{svc}' and armRegionName eq '{arm_region}' and priceType eq 'Consumption'"),
@@ -82,18 +90,35 @@ def _find_fd_base_unit(tier: str, arm_region: str, currency: str) -> Optional[De
     batches = [retail_fetch_items(f, currency) for f in filters]
     items = _dedup_merge(batches)
 
-    # Keep positive, base-ish, non-noise, hour-based rows — but don’t throw away useful rows too early
+    # Lightly boost by tier tokens if present
+    def _has_tier(i: dict) -> bool:
+        t = " ".join([(i.get("productName") or ""), (i.get("skuName") or ""), (i.get("meterName") or "")]).lower()
+        return tier_l in t
+    tier_hits = [i for i in items if _has_tier(i)]
+    if tier_hits:
+        # prefer tier hits first but keep others as fallback; preserve uniqueness
+        seen = set()
+        merged = []
+        for it in tier_hits + items:
+            ident = (it.get("meterId") or (it.get("productId"), it.get("skuId"), it.get("meterName")))
+            if ident not in seen:
+                seen.add(ident); merged.append(it)
+        items = merged
+
+    # Keep positive, non-noise rows
     cands = [i for i in items if _d(i.get("retailPrice", 0)) > 0 and not _fd_is_noise(i)]
     if not cands:
         return None
 
-    # Prefer rows that look like the fixed/base fee and/or capacity; score, then pick best
+    # Score and pick best
     cands.sort(key=lambda i: _score_fd_base(i, arm_region, tier_l), reverse=True)
 
-    # Strong preference: 1 Hour + base-ish
-    strong = [i for i in cands if i.get("unitOfMeasure") == "1 Hour" and _fd_is_baseish(i)]
+    # Strong preference: hourly + base-ish
+    strong = [i for i in cands if _uom_is(i, "1 Hour") and _fd_is_baseish(i)]
     row = strong[0] if strong else cands[0]
     return _d(row.get("retailPrice", 0))
+
+# ---- main ---------------------------------------------------------------------------
 
 def price_front_door(component, region, currency, ent_prices: Dict[Key, Decimal]):
     tier = (component.get("tier") or "Standard").title()   # "Standard" | "Premium"
@@ -108,7 +133,6 @@ def price_front_door(component, region, currency, ent_prices: Dict[Key, Decimal]
     detail_bits: List[str] = []
 
     # ---------- BASE / CAPACITY (per hour) ----------
-    # Try multiple likely enterprise SKU names before retail
     ent_svc, uom_hr = "Azure Front Door", "1 Hour"
     ent_candidates = [
         tier,                       # "Standard" / "Premium"
@@ -117,7 +141,7 @@ def price_front_door(component, region, currency, ent_prices: Dict[Key, Decimal]
         f"{tier} Capacity",
         f"{tier} Capacity Unit",
     ]
-    base_unit = None
+    base_unit: Optional[Decimal] = None
     for sku_key in ent_candidates:
         ent = enterprise_lookup(ent_prices, ent_svc, sku_key, region, uom_hr)
         if ent is not None and _d(ent) > 0:
@@ -128,7 +152,6 @@ def price_front_door(component, region, currency, ent_prices: Dict[Key, Decimal]
         base_unit = _find_fd_base_unit(tier, arm, currency)
 
     if base_unit is None or base_unit <= 0:
-        # Be explicit rather than silently $0 — you can keep this or return $0 with a note
         return _d(0), f"Front Door {tier} (base not found; catalog uses classic/global wording)"
 
     total += base_unit * hours
@@ -137,38 +160,45 @@ def price_front_door(component, region, currency, ent_prices: Dict[Key, Decimal]
     # ---------- REQUESTS (per 1M) ----------
     if req_m > 0:
         req_uom = "1,000,000"
-        req_filters = [
-            ("serviceName eq 'Azure Front Door' and priceType eq 'Consumption' "
-             "and (contains(meterName,'Request') or contains(productName,'Request'))"),
-            ("serviceName eq 'Frontdoor' and priceType eq 'Consumption' "
-             "and (contains(meterName,'Request') or contains(productName,'Request'))"),
-        ]
-        req_items = _dedup_merge([retail_fetch_items(f, currency) for f in req_filters])
-        row_req = retail_pick(req_items, req_uom) or _pick(req_items)
-        if row_req:
-            unit_req_m = _d(row_req.get("retailPrice", 0))
-            total += unit_req_m * req_m
-            detail_bits.append(f"req:{req_m}M@{unit_req_m}/1M")
+        # enterprise first (if your sheet has it)
+        ent_req = enterprise_lookup(ent_prices, ent_svc, "Requests", region, req_uom)
+        if ent_req is not None and _d(ent_req) > 0:
+            unit_req_m = _d(ent_req)
+        else:
+            req_filters = [
+                ("serviceName eq 'Azure Front Door' and priceType eq 'Consumption' "
+                 "and (contains(meterName,'Request') or contains(productName,'Request'))"),
+                ("serviceName eq 'Frontdoor' and priceType eq 'Consumption' "
+                 "and (contains(meterName,'Request') or contains(productName,'Request'))"),
+            ]
+            req_items = _dedup_merge([retail_fetch_items(f, currency) for f in req_filters])
+            row_req = retail_pick(req_items, req_uom) or _pick(req_items)
+            unit_req_m = _d(row_req.get("retailPrice", 0)) if row_req else _d(0)
+        total += unit_req_m * req_m
+        detail_bits.append(f"req:{req_m}M@{unit_req_m}/1M")
 
     # ---------- EGRESS (per GB) ----------
     if egress_gb > 0:
         egr_uom = "1 GB"
-        egr_filters = [
-            ("serviceName eq 'Azure Front Door' and priceType eq 'Consumption' "
-             "and (contains(meterName,'Data Transfer Out') or contains(meterName,'Outbound') "
-             "or contains(productName,'Data Transfer Out') or contains(productName,'Outbound') "
-             "or contains(productName,'Internet'))"),
-            ("serviceName eq 'Frontdoor' and priceType eq 'Consumption' "
-             "and (contains(meterName,'Data Transfer Out') or contains(meterName,'Outbound') "
-             "or contains(productName,'Data Transfer Out') or contains(productName,'Outbound') "
-             "or contains(productName,'Internet'))"),
-        ]
-        egr_items = _dedup_merge([retail_fetch_items(f, currency) for f in egr_filters])
-        row_egr = retail_pick(egr_items, egr_uom) or _pick(egr_items)
-        if row_egr:
-            unit_dto = _d(row_egr.get("retailPrice", 0))
-            total += unit_dto * egress_gb
-            detail_bits.append(f"egress:{egress_gb}GB@{unit_dto}/GB")
+        ent_egr = enterprise_lookup(ent_prices, ent_svc, "Data Transfer Out", region, egr_uom)
+        if ent_egr is not None and _d(ent_egr) > 0:
+            unit_dto = _d(ent_egr)
+        else:
+            egr_filters = [
+                ("serviceName eq 'Azure Front Door' and priceType eq 'Consumption' "
+                 "and (contains(meterName,'Data Transfer Out') or contains(meterName,'Outbound') "
+                 "or contains(productName,'Data Transfer Out') or contains(productName,'Outbound') "
+                 "or contains(productName,'Internet'))"),
+                ("serviceName eq 'Frontdoor' and priceType eq 'Consumption' "
+                 "and (contains(meterName,'Data Transfer Out') or contains(meterName,'Outbound') "
+                 "or contains(productName,'Data Transfer Out') or contains(productName,'Outbound') "
+                 "or contains(productName,'Internet'))"),
+            ]
+            egr_items = _dedup_merge([retail_fetch_items(f, currency) for f in egr_filters])
+            row_egr = retail_pick(egr_items, egr_uom) or _pick(egr_items)
+            unit_dto = _d(row_egr.get("retailPrice", 0)) if row_egr else _d(0)
+        total += unit_dto * egress_gb
+        detail_bits.append(f"egress:{egress_gb}GB@{unit_dto}/GB")
 
     # ---------- WAF POLICY (per policy / month) ----------
     if waf_policies > 0:

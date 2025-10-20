@@ -174,6 +174,10 @@ azure-bom --enterprise-csv examples/enterprise_prices.sample.csv --bom examples/
 ### Output
 
 ```text
+
+$23,604.93 AUD
+(.venv) robertleggett@Mac azure-bill-of-materials-cost-calculator % azure-bom --bom examples/azure_bom.json --currency AUD
+
 === Monthly Cost by Workload (Original vs With SP/RI modelling) ===
 Workload                  Tier            PAYG est.        With Opt.
 
@@ -199,7 +203,7 @@ AI                        prod               $13.62           $11.32
   • onelake_storage     OneLake Hot:10TB Cool:40TB                                              = $1,001.69
   • synapse_sqlpool     Synapse SQLPool DW1000c @ 0.0258311/DWU-hr × 1000 DWU × 200h (Azure Synapse Analytics Dedicated SQL Pool / 100 DWUs / 1/Hour)  = $5,166.22
   • databricks          Databricks Premium @ 0.22927/DBU-hr × 500h                              = $114.64
-  • data_factory        Data Factory (DIU:200h, Activities:50k)                                 = $0.00
+  • data_factory        Data Factory (DIU:200h @ 0/h, Acts:50k @ 0/1k)                          = $0.00
   • event_hub           Event Hubs Standard TU @ 0.045854/hr × 4 × 730h                         = $133.89
   • service_bus         Service Bus Premium MU @ 1.417654/hr × 2 × 730h                         = $2,069.77
   • event_grid          Event Grid 200000000 ops @ 0.091708/1M                                  = $18.34
@@ -207,8 +211,8 @@ DataPlatform              prod           $13,955.24       $11,603.78
 
 -- Reporting components --
   • fabric_capacity     Fabric F32 @ 0.775638/hr × 12h × 22d                                    = $204.77
-  • cognitive_search    Cog Search S1 SU:2 @ 0/hr × 730h                                        = $0.00
-Reporting                 prod              $204.77          $170.26
+  • cognitive_search    Cog Search S1 SU:2 @ 0.746504/hr × 730h                                 = $1,089.90
+Reporting                 prod            $1,294.66        $1,076.51
 
 -- Observability components --
   • log_analytics       LogAnalytics ingest:3600GB @ 0.106993/GB                                = $385.17
@@ -247,7 +251,7 @@ IntegrationAndQueues      shared          $1,794.93        $1,492.49
 PlatformGovernance        shared              $0.00            $0.00
 
 === Grand Total (Monthly, With Optimisations) ===
-$23,604.93 AUD
+$24,511.18 AUD
 ```
 
 ## Notes
