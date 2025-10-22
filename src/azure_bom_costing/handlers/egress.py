@@ -1,199 +1,26 @@
-# =====================================================================================
-# Bandwidth / Egress (Internet Data Transfer Out). Example component:
-# {
-#   "type": "bandwidth_egress",
-#   "gb_per_month": 1200
-# }
-#
-# Notes:
-# • Models outbound Internet data transfer costs (“Data Transfer Out”) from Azure regions.
-# • Pricing is region- and zone-based. Azure groups egress pricing into three geographic
-#   zones with differing per-GB rates:
-#     - Zone 1: North America, Western Europe, UK, Canada, France, Germany, etc.
-#     - Zone 2: Japan, Korea, SE Asia, India, Australia SE.
-#     - Zone 3: Australia East, New Zealand North, Brazil South, South Africa North, etc.
-# • Uses `_egress_zone_for_region()` to automatically map ARM display region → Azure egress zone label.
-# • Query and scoring logic prefers:
-#     1. “Internet” / “Data Transfer Out” labeled rows
-#     2. Correct zone keyword (e.g., “Zone 3”)
-#     3. Exact region match when present
-#     4. “1 GB” unit of measure
-# • Excludes non-Internet rows (ExpressRoute, Private Link, VPN, Front Door, CDN, etc.).
-# • Falls back to broader “Outbound” or “Data Transfer Out” entries if zone- or region-
-#   specific rows are missing.
-# • Enterprise pricing lookup supported (rare for bandwidth).
-# • Safe fallback: if no matching catalog entry is found, returns zero cost with a message.
-# • Example output:
-#       Egress 1200GB @ 0.146733/GB (Bandwidth - Routing Preference: Internet / Standard Data Transfer Out)
-# =====================================================================================
 from decimal import Decimal
-from typing import List, Optional, Dict
+from typing import Dict
 
-from ..helpers import _d, _arm_region
-from ..pricing_sources import retail_fetch_items, enterprise_lookup
+from ..helpers.math import decimal
+from ..helpers.pricing import price_by_service
 from ..types import Key
 
-# ---------- Bandwidth / Egress ----------
-def _egress_zone_for_region(region_display: str) -> Optional[str]:
-    """Map ARM display region to Azure egress pricing zone label."""
-    r = region_display.strip().lower()
-    zone1 = {"east us", "west us", "central us", "north central us", "south central us",
-             "west europe", "north europe", "france central", "uksouth", "uk south",
-             "germany west central", "switzerland north", "norway east", "italy north",
-             "canada central", "canada east"}
-    zone2 = {"japan east", "japan west", "korea central", "korea south",
-             "australia southeast", "australia se",
-             "east asia", "southeast asia", "south india", "central india", "west india"}
-    zone3 = {"australia east", "australiaeast", "new zealand north", "brazil south",
-             "south africa north", "uae north", "qatar central", "poland central"}
-    if r in zone1: return "Zone 1"
-    if r in zone2: return "Zone 2"
-    if r in zone3: return "Zone 3"
-    if r.replace(" ", "") == "australiaeast": return "Zone 3"
-    return None
+def price_egress(component, region, currency, ent_prices: Dict[Key, Decimal]):
+    # Azure retail often uses 'Bandwidth' as the service for egress.
+    service = (component.get("service") or "Bandwidth").strip()
+    sku     = (component.get("sku") or "").strip()   # e.g., Zone1/Zone2/Internet Egress tier
+    uom     = (component.get("uom") or "").strip() or None  # e.g., '1 GB'
+    qty     = decimal(component.get("quantity", component.get("gb", 0)))  # pass GB in quantity
+    hours   = decimal(component.get("hours_per_month", 1))  # GB-based pricing → hours=1
 
-def _pick_egress_item(items: List[dict], arm_region: str, zone_label: Optional[str], prefer_uom: str = "1 GB") -> Optional[dict]:
-    """Pick a sensible *Internet* egress row (favor Zone; exclude non-Internet)."""
-    if not items:
-        return None
-    z = (zone_label or "").lower()
-
-    # Things we definitely do NOT want to price as Internet egress
-    bad_tokens = [
-        "peering", "to microsoft", "microsoft network", "private",
-        "vpn", "expressroute", "front door", "cdn",
-        "within region", "intra-zone", "inter-zone",
-        "between regions", "data transfer in", "inbound"
-    ]
-
-    def score(i: dict) -> int:
-        price = _d(i.get("retailPrice", 0))
-        if price <= 0:
-            return -999
-
-        txt = " ".join([
-            i.get("serviceName",""), i.get("productName",""),
-            i.get("skuName",""), i.get("meterName","")
-        ]).lower()
-
-        # Reject clearly non-Internet rows
-        if any(b in txt for b in bad_tokens):
-            return -500
-
-        s = 0
-        # Strong Internet/outbound signals
-        if "internet" in txt: s += 30
-        if "data transfer out" in txt or "outbound" in txt: s += 20
-
-        # Prefer explicit Zone label when armRegionName is missing
-        if z and z in txt: s += 15
-
-        # Prefer exact region when present
-        if (i.get("armRegionName") or "").lower() == arm_region: s += 6
-
-        # Prefer correct UOM
-        if (i.get("unitOfMeasure") or "") == prefer_uom: s += 4
-
-        return s
-
-    candidates = [i for i in items if _d(i.get("retailPrice", 0)) > 0]
-    if not candidates:
-        return None
-    candidates.sort(key=score, reverse=True)
-
-    # Final sanity: if the top still smells like non-Internet, try the next best
-    for c in candidates:
-        txt = " ".join([c.get("productName",""), c.get("skuName",""), c.get("meterName","")]).lower()
-        if not any(b in txt for b in bad_tokens):
-            return c
-    return candidates[0]
-
-def price_bandwidth(component, region, currency, ent_prices: Dict[Key, Decimal]):
-    gb = _d(component.get("gb_per_month", 0))
-    if gb <= 0:
-        return _d(0), "Bandwidth (none)"
-
-    service, sku, uom = "Bandwidth", "Data Transfer Out", "1 GB"
-
-    # Enterprise sheet (rare for egress, but try)
-    ent = enterprise_lookup(ent_prices, service, sku, region, uom)
-    if ent is not None:
-        unit = ent
-        picked_desc = "enterprise sheet"
-    else:
-        arm_region = _arm_region(region)
-        zone_lbl   = _egress_zone_for_region(region)
-
-        # Build filters; prefer Zone-labelled Internet egress first
-        filters: List[str] = []
-        if zone_lbl:
-            z = zone_lbl
-            filters += [
-                ("serviceName eq 'Bandwidth' and priceType eq 'Consumption' "
-                 f"and contains(productName,'Data Transfer Out') and contains(productName,'Internet') and contains(productName,'{z}')"),
-                ("serviceName eq 'Bandwidth' and priceType eq 'Consumption' "
-                 f"and contains(meterName,'Data Transfer Out') and contains(meterName,'Internet') and contains(productName,'{z}')"),
-                ("serviceName eq 'Bandwidth' and priceType eq 'Consumption' "
-                 f"and contains(productName,'Outbound') and contains(productName,'Internet') and contains(productName,'{z}')"),
-            ]
-
-        # Region-specific fallbacks
-        filters += [
-            ("serviceName eq 'Bandwidth' "
-             f"and armRegionName eq '{arm_region}' "
-             "and priceType eq 'Consumption' "
-             "and (contains(productName,'Data Transfer Out') or contains(productName,'Outbound'))"),
-            ("serviceName eq 'Bandwidth' "
-             f"and armRegionName eq '{arm_region}' "
-             "and priceType eq 'Consumption' "
-             "and (contains(meterName,'Data Transfer Out') or contains(meterName,'Outbound'))"),
-            ("serviceName eq 'Bandwidth' "
-             f"and armRegionName eq '{arm_region}' "
-             "and priceType eq 'Consumption'"),
-            # Catalogs sometimes omit armRegionName for Internet egress; rely on wording
-            ("serviceName eq 'Bandwidth' and priceType eq 'Consumption' "
-             "and (contains(productName,'Data Transfer Out') or contains(productName,'Outbound'))"),
-            ("serviceName eq 'Bandwidth' and priceType eq 'Consumption'")
-        ]
-
-        # Fetch & dedupe
-        items: List[dict] = []
-        seen = set()
-        for f in filters:
-            try:
-                chunk = retail_fetch_items(f, currency)
-                for it in chunk:
-                    key = it.get("meterId") or (it.get("productId"), it.get("skuId"), it.get("meterName"))
-                    if key not in seen:
-                        seen.add(key)
-                        items.append(it)
-            except Exception:
-                pass
-
-        row = _pick_egress_item(items, arm_region, zone_lbl, uom)
-        if not row:
-            # Don’t crash overall costing if catalog is weird
-            return _d(0), "Egress (unpriced — no suitable catalog row found)"
-
-        unit = _d(row.get("retailPrice", 0))
-        picked_desc = f"{row.get('productName','?')} / {row.get('meterName','?')}"
-
-        # Guardrail: if we somehow grabbed a suspiciously-low non-Internet rate,
-        # try to upgrade to an Internet+Zone row if available.
-        if unit < _d("0.03") and zone_lbl:
-            zone_l = zone_lbl.lower()
-            better = [
-                i for i in items
-                if _d(i.get("retailPrice", 0)) > 0
-                   and "internet" in " ".join([i.get("productName",""), i.get("meterName","")]).lower()
-                   and zone_l in " ".join([i.get("productName",""), i.get("meterName","")]).lower()
-            ]
-            if better:
-                better.sort(key=lambda j: _d(j.get("retailPrice", 0)))
-                unit2 = _d(better[0].get("retailPrice", 0))
-                if unit2 > unit:
-                    unit = unit2
-                    picked_desc = f"{better[0].get('productName','?')} / {better[0].get('meterName','?')}"
-
-    total = unit * gb
-    return total, f"Egress {gb}GB @ {unit}/GB ({picked_desc})"
+    return price_by_service(
+        service=service,
+        sku=sku,
+        region=region,
+        currency=currency,
+        ent_prices=ent_prices,
+        uom=uom,
+        qty=qty,
+        hours=hours,
+        must_contain=[sku.lower()] if sku else None,
+    )

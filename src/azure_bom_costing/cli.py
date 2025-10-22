@@ -1,12 +1,12 @@
 from __future__ import annotations
+
+from .helpers.auth import get_aad_token
+from .price_model import run_model
+
 import argparse
 import json
 import os
 import pathlib
-
-from .price_model import run_model
-from .pricing_sources import get_aad_token
-
 
 def main() -> None:
     ap = argparse.ArgumentParser(prog="azure-bom", description="Azure BOM Costing")
@@ -15,6 +15,7 @@ def main() -> None:
     ap.add_argument("--enterprise-api", choices=["mca", "ea"], help="Use Enterprise Price Sheet API")
     ap.add_argument("--billing-account", help="Billing Account Id (MCA)")
     ap.add_argument("--enrollment-account", help="Enrolment Account Id (EA)")
+    ap.add_argument("--retail-csv", help="Path to retail prices CSV (optional)")
     ap.add_argument("--enterprise-csv", help="Path to enterprise prices CSV (optional)")
     args = ap.parse_args()
 
@@ -43,10 +44,10 @@ def main() -> None:
         enterprise_api=args.enterprise_api,
         billing_account=args.billing_account,
         enrollment_account=args.enrollment_account,
+        retail_csv=args.retail_csv,
         enterprise_csv=args.enterprise_csv,
         aad_token=token,
     )
-
 
 if __name__ == "__main__":
     main()

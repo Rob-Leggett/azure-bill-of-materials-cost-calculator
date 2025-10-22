@@ -1,62 +1,25 @@
-# =====================================================================================
-# Azure Functions (Consumption Plan). Example component:
-# {
-#   "type": "functions",
-#   "gb_seconds": 250000000,
-#   "executions": 200000000
-# }
-#
-# Notes:
-# • Models Azure Functions (serverless) under the Consumption pricing plan.
-# • `gb_seconds` – Total monthly GB-seconds of execution time (memory × duration).
-# • `executions` – Total monthly execution count.
-# • Billing units:
-#     - Execution Time: “per 1,000,000 GB-seconds”
-#     - Executions: “per 1,000,000 executions”
-# • Automatically retrieves regional consumption rates from Azure Retail API.
-# • Enterprise price sheet lookup supported if available (MCA / EA customers).
-# • Excludes premium plan (App Service plan-based) pricing — model separately.
-# • Use for event-driven, pay-per-use Functions where compute time and invocation
-#   volume are both billed components.
-# =====================================================================================
 from decimal import Decimal
 from typing import Dict
 
-from ..helpers import _d, _pick, _arm_region
-from ..pricing_sources import enterprise_lookup, retail_pick, retail_fetch_items
+from ..helpers.math import decimal
+from ..helpers.pricing import price_by_service
 from ..types import Key
 
-
 def price_functions(component, region, currency, ent_prices: Dict[Key, Decimal]):
-    gb_seconds = _d(component.get("gb_seconds", 0))
-    execs = _d(component.get("executions", 0))
-    arm = _arm_region(region)
-    total = _d(0)
+    service = (component.get("service") or "Functions").strip()
+    sku     = (component.get("sku") or "").strip()   # e.g., Consumption, Premium, Executions, GB-s
+    uom     = (component.get("uom") or "").strip() or None  # e.g., '1 Million', '1 GB-s'
+    qty     = decimal(component.get("quantity", component.get("executions", component.get("gb_seconds", 1))))
+    hours   = decimal(component.get("hours_per_month", 1))  # non-hourly metering common
 
-    # Execution time per GB-second (billed per million GB-seconds in catalog)
-    if gb_seconds > 0:
-        service, sku, uom = "Functions", "Execution Time", "1,000,000 GB Seconds"
-        ent = enterprise_lookup(ent_prices, service, sku, region, uom)
-        if ent is None:
-            flt = (f"serviceName eq 'Functions' and armRegionName eq '{arm}' and priceType eq 'Consumption' "
-                   "and contains(meterName,'Execution Time')")
-            row = retail_pick(retail_fetch_items(flt, currency), uom) or _pick(retail_fetch_items(flt, currency))
-            unit_per_mgbsec = _d(row.get("retailPrice", 0)) if row else _d(0)
-        else:
-            unit_per_mgbsec = ent
-        total += unit_per_mgbsec * (gb_seconds / _d(1_000_000))
-
-    # Executions per 1M
-    if execs > 0:
-        service, sku, uom = "Functions", "Executions", "1,000,000"
-        ent = enterprise_lookup(ent_prices, service, sku, region, uom)
-        if ent is None:
-            flt2 = ("serviceName eq 'Functions' and priceType eq 'Consumption' "
-                    "and contains(meterName,'Executions')")
-            row2 = retail_pick(retail_fetch_items(flt2, currency), uom) or _pick(retail_fetch_items(flt2, currency))
-            unit_per_m = _d(row2.get("retailPrice", 0)) if row2 else _d(0)
-        else:
-            unit_per_m = ent
-        total += unit_per_m * (execs / _d(1_000_000))
-
-    return total, "Functions (GB-s + execs)"
+    return price_by_service(
+        service=service,
+        sku=sku,
+        region=region,
+        currency=currency,
+        ent_prices=ent_prices,
+        uom=uom,
+        qty=qty,
+        hours=hours,
+        must_contain=[sku.lower()] if sku else None,
+    )

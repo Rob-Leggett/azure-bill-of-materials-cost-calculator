@@ -5,12 +5,13 @@ from ..helpers.math import decimal
 from ..helpers.pricing import price_by_service
 from ..types import Key
 
-def price_dns(component, region, currency, ent_prices: Dict[Key, Decimal]):
-    service = (component.get("service") or "DNS").strip()
+def price_governance(component, region, currency, ent_prices: Dict[Key, Decimal]):
+    # Leaving service name overridable to match your CSV exactly (could be 'Policy', 'Cost Management', etc.)
+    service = (component.get("service") or "Governance").strip()
     sku     = (component.get("sku") or "").strip()
     uom     = (component.get("uom") or "").strip() or None
-    qty     = decimal(component.get("quantity", component.get("instances", 1)))
-    hours   = decimal(component.get("hours_per_month", 1))  # typical DNS UOMs are non-hourly
+    qty     = decimal(component.get("quantity", 1))
+    hours   = decimal(component.get("hours_per_month", 1))  # many governance items are per-month events
 
     return price_by_service(
         service=service,
