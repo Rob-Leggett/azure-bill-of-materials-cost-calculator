@@ -3,17 +3,20 @@ from typing import Dict
 
 from ..helpers.math import decimal
 from ..helpers.pricing import price_by_service
+from ..helpers.string import stripped
 from ..types import Key
 
 def price_kubernetes(component, region, currency, ent_prices: Dict[Key, Decimal]):
-    service = (component.get("service") or "Kubernetes Service").strip()  # AKS in retail CSVs
-    sku     = (component.get("sku") or "").strip()   # e.g., Uptime SLA, Control Plane, etc.
-    uom     = (component.get("uom") or "").strip() or None  # often '1 Hour' or '1 Cluster/Hour'
+    service = stripped(component.get("service"), "Kubernetes Service")      # default AKS service name
+    product = stripped(component.get("product"), None)
+    sku     = stripped(component.get("sku"), "") or ""                      # e.g., "Uptime SLA", "Control Plane"
+    uom     = stripped(component.get("uom"), "1 Hour") or None              # typical AKS billing unit
     qty     = decimal(component.get("quantity", component.get("clusters", component.get("instances", 1))))
-    hours   = decimal(component.get("hours_per_month", 730))
+    hours   = decimal(component.get("hours_per_month", 730))                # hourly metering by default
 
     return price_by_service(
         service=service,
+        product=product,
         sku=sku,
         region=region,
         currency=currency,

@@ -3,17 +3,20 @@ from typing import Dict
 
 from ..helpers.math import decimal
 from ..helpers.pricing import price_by_service
+from ..helpers.string import stripped
 from ..types import Key
 
 def price_key_vault(component, region, currency, ent_prices: Dict[Key, Decimal]):
-    service = (component.get("service") or "Key Vault").strip()
-    sku     = (component.get("sku") or "").strip()   # e.g., Standard/Premium, operations, secrets ops, etc.
-    uom     = (component.get("uom") or "").strip() or None  # e.g., '10,000 operations', '1 Key/Month'
+    service = stripped(component.get("service"), "Key Vault")               # Azure default service name
+    product = stripped(component.get("product"), None)
+    sku     = stripped(component.get("sku"), "") or ""                      # e.g., "Standard", "Premium"
+    uom     = stripped(component.get("uom"), "10,000 Operations") or None   # typical metering unit
     qty     = decimal(component.get("quantity", component.get("operations", 1)))
-    hours   = decimal(component.get("hours_per_month", 1))  # usually per op or per month
+    hours   = decimal(component.get("hours_per_month", 1))                  # per op or per month basis
 
     return price_by_service(
         service=service,
+        product=product,
         sku=sku,
         region=region,
         currency=currency,
