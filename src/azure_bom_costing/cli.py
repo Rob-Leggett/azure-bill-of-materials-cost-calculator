@@ -11,7 +11,7 @@ import pathlib
 def main() -> None:
     ap = argparse.ArgumentParser(prog="azure-bom", description="Azure BOM Costing")
     ap.add_argument("--bom", default="examples/azure_bom.json", help="Path to BOM JSON")
-    ap.add_argument("--currency", default=None, help="Currency code (e.g. AUD)")
+    ap.add_argument("--currency", default="AUD", help="Currency code (e.g. AUD)")
     ap.add_argument("--enterprise-api", choices=["mca", "ea"], help="Use Enterprise Price Sheet API")
     ap.add_argument("--billing-account", help="Billing Account Id (MCA)")
     ap.add_argument("--enrollment-account", help="Enrolment Account Id (EA)")

@@ -7,16 +7,12 @@ from ..helpers.string import stripped
 from ..types import Key
 
 def price_private_network(component, region, currency, ent_prices: Dict[Key, Decimal]):
-    # Override service in component if your CSV uses "Private Link", "Virtual Network", etc.
-    service = stripped(component.get("service"), "Virtual Network")     # common Azure name for networking
+    service = stripped(component.get("service"), None)
     product = stripped(component.get("product"), None)
-    sku     = stripped(component.get("sku"), "") or ""                  # e.g., "Private Link", "Endpoints", "PIP"
-    uom     = stripped(component.get("uom"), "") or None                # e.g., "1 Hour", "1 Gateway Hour"
-    qty     = decimal(component.get("quantity", component.get("instances", 1)))
-
-    # Default billing hours: 730 if hourly UOM, otherwise 1 (monthly)
-    uom_l = (uom or "").lower()
-    hours = decimal(component.get("hours_per_month", 730 if "hour" in uom_l else 1))
+    sku     = stripped(component.get("sku"), None)
+    uom     = stripped(component.get("uom"), None)
+    qty     = decimal(component.get("quantity"), None)
+    hours   = decimal(component.get("hours_per_month"), None)
 
     return price_by_service(
         service=service,

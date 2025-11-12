@@ -7,14 +7,12 @@ from ..helpers.string import stripped
 from ..types import Key
 
 def price_vm(component, region, currency, ent_prices: Dict[Key, Decimal]):
-    # Many CSVs use "Virtual Machines" for compute. Override via component["service"] if needed.
-    service = stripped(component.get("service"), "Virtual Machines")          # default for VMs
-    product = stripped(component.get("product"), None)                        # optional
-    sku     = stripped(component.get("sku"), "") or ""                        # e.g., "D2s_v5"
-    uom     = stripped(component.get("uom"), "1 Hour") or None
-    qty     = decimal(component.get("quantity", component.get("instances", 1)))
-    hours   = decimal(component.get("hours_per_month", 730))
-
+    service = stripped(component.get("service"), None)
+    product = stripped(component.get("product"), None)
+    sku     = stripped(component.get("sku"), None)
+    uom     = stripped(component.get("uom"), None)
+    qty     = decimal(component.get("quantity"), None)
+    hours   = decimal(component.get("hours_per_month"), None)
 
     return price_by_service(
         service=service,

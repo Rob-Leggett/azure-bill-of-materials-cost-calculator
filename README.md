@@ -6,9 +6,6 @@ BOM-driven Azure Cost Calculator (Enterprise + Retail)
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
-```
-
-```bash
 pip install -e '.[dev]'
 ```
 
@@ -62,7 +59,6 @@ azure-bom --enterprise-csv examples/enterprise_prices.sample.csv --retail-csv ex
 
 ```json
 {
-  "region": "Australia East",
   "currency": "AUD",
   "assumptions": {
     "hours_per_month": 730,
@@ -74,38 +70,58 @@ azure-bom --enterprise-csv examples/enterprise_prices.sample.csv --retail-csv ex
   },
   "workloads": [
     {
-      "name": "All-Services",
-      "tier": "test",
+      "name": "All-Services-AE",
+      "region": "australiaeast",
+      "tier": "prod",
       "components": [
-        { "type": "open_ai",          "sku": "gpt-4o",                 "tokens_1k": 5000,      "hours_per_month": 1 },
-        { "type": "kubernetes",       "sku": "Uptime SLA",             "clusters": 1,          "hours_per_month": 730 },
-        { "type": "api_management",   "sku": "Developer",              "gateway_units": 1,     "hours_per_month": 730 },
-        { "type": "app_insights",     "sku": "Ingest",                 "gb": 100,              "hours_per_month": 1 },
-        { "type": "app_service",      "sku": "P1v4",                   "instances": 2,         "hours_per_month": 730 },
-        { "type": "egress",           "sku": "Zone1 Internet",         "gb": 2000,             "hours_per_month": 1 },
-        { "type": "backup",           "sku": "Protected Instance",     "quantity": 10,         "hours_per_month": 1 },
-        { "type": "cognitive_search", "sku": "S1",                     "instances": 1,         "hours_per_month": 730 },
-        { "type": "container_apps",   "sku": "Workload vCPU",          "instances": 2,         "hours_per_month": 730 },
-        { "type": "data_factory",     "sku": "Pipeline Activity",      "quantity": 100000,     "hours_per_month": 1 },
-        { "type": "databricks",       "sku": "DBU Premium",            "quantity": 2000,       "hours_per_month": 1 },
-        { "type": "defender",         "sku": "Servers P2",             "quantity": 10,         "hours_per_month": 1 },
-        { "type": "dev_ops",          "sku": "User Basic",             "quantity": 25,         "hours_per_month": 1 },
-        { "type": "dns",              "sku": "DNS Queries",            "quantity": 100000000,  "hours_per_month": 1 },
-        { "type": "entra_id",         "sku": "P1",                     "users": 1000,          "hours_per_month": 1 },
-        { "type": "event_hubs",       "sku": "Standard",               "instances": 2,         "hours_per_month": 730 },
-        { "type": "fabric",           "sku": "F64",                    "capacity_units": 64,   "hours_per_month": 730 },
-        { "type": "front_door",       "sku": "Standard",               "requests_millions": 50, "egress_gb": 1000,  "hours_per_month": 730 },
-        { "type": "functions",        "sku": "Executions",             "executions": 200000000, "hours_per_month": 1 },
-        { "type": "governance",       "sku": "Policy Assessment",      "quantity": 1000000,    "hours_per_month": 1 },
-        { "type": "key_vault",        "sku": "Premium",                "operations": 500000,   "hours_per_month": 1 },
-        { "type": "load_balancers",   "sku": "Standard Rule Hour",     "instances": 2,         "hours_per_month": 730 },
-        { "type": "log_analytics",    "sku": "Per GB",                 "gb": 500,              "hours_per_month": 1 },
-        { "type": "private_network",  "sku": "Private Link",           "instances": 2,         "hours_per_month": 730 },
-        { "type": "redis",            "sku": "C2",                     "instances": 1,         "hours_per_month": 730 },
-        { "type": "sql",              "sku": "GP_S_Gen5_4",            "vcores": 4,            "hours_per_month": 730 },
-        { "type": "storage",          "sku": "Standard LRS Hot",       "tb": 5, "transactions_per_month": 1000000 },
-        { "type": "synapse",          "sku": "DW100c",                 "dwu": 100,             "hours_per_month": 730 },
-        { "type": "vm",               "sku": "D2s_v5",                 "instances": 3,         "hours_per_month": 730 }
+        { "type": "app_service",      "service": "App Service",             "sku": "P1v3",                     "instances": 3, "hours_per_month": 730, "purpose": "Client & Partner Portals, ShareDo extensions" },
+        { "type": "functions",        "service": "Functions",               "sku": "Consumption",               "executions": 0,                   "hours_per_month": 1,   "purpose": "API & event-driven logic" },
+        { "type": "kubernetes",       "service": "Kubernetes Service",      "sku": "Uptime SLA",                "clusters": 1,  "hours_per_month": 730, "purpose": "Modernised LPS modules (containers)" },
+        { "type": "container_apps",   "service": "Container Apps",          "sku": "Standard",                  "instances": 2, "hours_per_month": 730, "purpose": "Background processing / lightweight jobs" },
+        { "type": "vm",               "service": "Virtual Machines",        "sku": "Standard_D2_v5",            "instances": 2, "hours_per_month": 730, "purpose": "Legacy lift-and-shift apps" },
+
+        { "type": "dns",              "service": "DNS",                      "sku": "Zones",                     "zones": 1,     "queries": 0,           "hours_per_month": 730, "purpose": "Public/Private DNS" },
+        { "type": "private_network",  "service": "Virtual Network",          "sku": "Private Link",              "instances": 4, "hours_per_month": 730, "purpose": "Private connectivity to PaaS" },
+        { "type": "vpn_gateway",      "service": "VPN Gateway",              "sku": "VpnGw2",                    "instances": 1, "hours_per_month": 730, "purpose": "Hybrid connectivity" },
+        { "type": "front_door",       "service": "Azure Front Door",         "sku": "Standard+WAF",              "requests_millions": 0, "egress_gb": 0, "hours_per_month": 730, "purpose": "External access & web protection" },
+        { "type": "expressroute",     "service": "ExpressRoute",             "sku": "1Gbps",                     "circuits": 1,  "hours_per_month": 730, "purpose": "Private link to on-prem datacentre" },
+
+        { "type": "defender",         "service": "Microsoft Defender",       "sku": "Defender for Cloud",        "resources": 1, "hours_per_month": 730, "purpose": "Threat protection" },
+        { "type": "sentinel",         "service": "Microsoft Sentinel",       "sku": "PayGo",                     "gb": 0,        "hours_per_month": 1,   "purpose": "SIEM & central logging" },
+        { "type": "key_vault",        "service": "Key Vault",                "sku": "Standard",                  "operations": 0,"hours_per_month": 1,   "purpose": "Secrets, certificates, keys" },
+
+        { "type": "fabric",           "service": "Microsoft Fabric",         "sku": "F64",                       "capacity_units": 64, "hours_per_month": 730, "purpose": "Data Lakehouse + Power BI capacity" },
+        { "type": "sql",              "service": "SQL Database",             "sku": "BusinessCritical_8_vCore",  "vcores": 8,    "hours_per_month": 730, "purpose": "ShareDo, Portal & Finance databases" },
+        { "type": "data_factory",     "service": "Data Factory",             "sku": "Pipeline Activity",         "quantity": 0,  "hours_per_month": 1,   "purpose": "ETL & integration pipelines" },
+        { "type": "storage",          "service": "Storage (Blob)",           "sku": "Hot",                       "tb": 5,        "transactions_per_month": 0, "purpose": "Documents (iManage, ShareDo)" },
+        { "type": "storage",          "service": "Data Lake Gen2",           "sku": "Cool",                      "tb": 1,        "transactions_per_month": 0, "purpose": "Analytics & AI data" },
+
+        { "type": "open_ai",          "service": "Cognitive Services",       "sku": "gpt-4o",                    "tokens_1k": 0, "hours_per_month": 1,   "purpose": "Triage, chat, client insight" },
+        { "type": "cognitive_search", "service": "Cognitive Search",         "sku": "S1",                        "instances": 1, "hours_per_month": 730, "purpose": "Document indexing & search" },
+
+        { "type": "service_bus",      "service": "Service Bus",              "sku": "Premium P1",                "instances": 2, "hours_per_month": 730, "purpose": "Reliable messaging between systems" },
+        { "type": "event_grid",       "service": "Event Grid",               "sku": "Standard",                  "events": 0,    "hours_per_month": 1,   "purpose": "Event-driven orchestration" },
+        { "type": "logic_apps",       "service": "Logic Apps",               "sku": "Standard",                  "executions": 0,"hours_per_month": 1,   "purpose": "Salesforce/DocuSign workflows" },
+
+        { "type": "app_insights",     "service": "Application Insights",     "sku": "Ingest",                    "gb": 0,        "hours_per_month": 1,   "purpose": "App telemetry" },
+        { "type": "log_analytics",    "service": "Log Analytics",            "sku": "Per GB",                    "gb": 0,        "hours_per_month": 1,   "purpose": "Logs & metrics" },
+        { "type": "automation",       "service": "Automation",               "sku": "Jobs",                      "quantity": 0,  "hours_per_month": 1,   "purpose": "Runbooks & patching" },
+
+        { "type": "storage",          "service": "Archive Storage",          "sku": "Archive",                   "tb": 1,        "transactions_per_month": 0, "purpose": "Long-term retention" },
+        { "type": "backup",           "service": "Backup",                   "sku": "Protected Instance",        "quantity": 1,  "hours_per_month": 1,   "purpose": "Backup of VMs/SQL/storage" },
+        { "type": "site_recovery",    "service": "Site Recovery",            "sku": "Standard",                  "protected_vms": 1, "hours_per_month": 730, "purpose": "DR replication" }
+      ]
+    },
+    {
+      "name": "All-Services-ASE",
+      "region": "australiasoutheast",
+      "tier": "prod",
+      "components": [
+        { "type": "app_service",      "service": "App Service",             "sku": "P1v3",           "instances": 0, "hours_per_month": 730, "purpose": "Regional capacity (Melbourne) — set if active/active" },
+        { "type": "kubernetes",       "service": "Kubernetes Service",      "sku": "Uptime SLA",    "clusters": 0,  "hours_per_month": 730, "purpose": "Secondary region (if required)" },
+        { "type": "front_door",       "service": "Azure Front Door",        "sku": "Standard+WAF",  "requests_millions": 0, "egress_gb": 0, "hours_per_month": 730, "purpose": "Global entry — same policy applies" },
+        { "type": "expressroute",     "service": "ExpressRoute",            "sku": "1Gbps",         "circuits": 0,  "hours_per_month": 730, "purpose": "Secondary circuit if dual-home" },
+        { "type": "storage",          "service": "Storage (Blob)",          "sku": "Hot",           "tb": 0,        "transactions_per_month": 0, "purpose": "Geo-redundant data (optional)" }
       ]
     }
   ]
@@ -115,79 +131,7 @@ azure-bom --enterprise-csv examples/enterprise_prices.sample.csv --retail-csv ex
 ### Output
 
 ```text
-=== Monthly Cost by Workload (Original vs With SP/RI modelling) ===
-Workload                  Tier            PAYG est.        With Opt.
 
--- All-Services components --
-  • open_ai             Azure OpenAI gpt-4o @0/unit × 5000 × 1                                  = $0.00
-  • kubernetes          Kubernetes Service Uptime SLA @0/unit × 1 × 730                         = $0.00
-  • api_management      API Management Developer @0/unit × 1 × 730                              = $0.00
-  • app_insights        Application Insights Ingest @0/unit × 100 × 1                           = $0.00
-  • app_service         App Service P1v4 @0/unit × 2 × 730                                      = $0.00
-  • egress              Bandwidth Zone1 Internet @0/unit × 2000 × 1                             = $0.00
-  • backup              Backup Protected Instance @0/unit × 10 × 1                              = $0.00
-  • cognitive_search    Cognitive Search S1 @0/unit × 1 × 730                                   = $0.00
-  • container_apps      Container Apps Workload vCPU @0/unit × 2 × 730                          = $0.00
-  • data_factory        Data Factory Pipeline Activity @0/unit × 100000 × 1                     = $0.00
-  • databricks          Azure Databricks DBU Premium @0/unit × 2000 × 1                         = $0.00
-  • defender            Microsoft Defender Servers P2 @0/unit × 10 × 1                          = $0.00
-  • dev_ops             DevOps User Basic @0/unit × 25 × 1                                      = $0.00
-  • dns                 DNS DNS Queries @0/unit × 100000000 × 1                                 = $0.00
-  • entra_id            Microsoft Entra ID P1 @0/unit × 1 × 1                                   = $0.00
-  • event_hubs          Event Hubs Standard @0/unit × 2 × 730                                   = $0.00
-  • fabric              Microsoft Fabric F64 @0/unit × 64 × 730                                 = $0.00
-  • front_door          Azure Front Door Standard @0/unit × 1000 × 730                          = $0.00
-  • functions           Functions Executions @0/unit × 200000000 × 1                            = $0.00
-  • governance          Governance Policy Assessment @0/unit × 1000000 × 1                      = $0.00
-  • key_vault           Key Vault Premium @0/unit × 1 × 1                                       = $0.00
-  • load_balancers      Load Balancer Standard Rule Hour @0/unit × 2 × 730                      = $0.00
-  • log_analytics       Log Analytics Per GB @0/unit × 500 × 1                                  = $0.00
-  • private_network     Virtual Network Private Link @0/unit × 2 × 730                          = $0.00
-  • redis               Azure Cache for Redis C2 @0/1 Hour × 1 × 730                            = $0.00
-  • sql                 Azure SQL Database GP_S_Gen5_4 @0/1 Hour × 4 × 730                      = $0.00
-  • storage             Storage Standard LRS Hot @0/unit × 5120 × 730                           = $0.00
-  • synapse             Azure Synapse Analytics DW100c @0/1 Hour × 100 × 730                    = $0.00
-  • vm                  Virtual Machines D2s_v5 @0/1 Hour × 3 × 730                             = $0.00
-All-Services              test                $0.00            $0.00
-
-=== Grand Total (Monthly, With Optimisations) ===
-$0.00 AUD
 ```
 
 ## Azure Pricing Field Reference (Retail + Enterprise Unified)
-
-| **Field**              | **Example**                                   | **Source (CSV Column)**                    | **Description / Usage**                                                                                                                        |
-|------------------------|-----------------------------------------------|--------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------|
-| `serviceName`          | `"Virtual Machines"`                          | `serviceName` or `productName`             | The high-level Azure service family (e.g. Virtual Machines, Storage, SQL Database, App Service). Primary filter for service matching.          |
-| `productName`          | `"Storage - Blob"`                            | `productName`                              | Descriptive product category under the service. Used for additional context when multiple product types exist (e.g. “File”, “Queue”, “Table”). |
-| `skuName`              | `"Standard_D4s_v5"`, `"P1v4"`                 | `skuName`                                  | Specific SKU name identifying the performance or tier (e.g., VM size, App Service plan tier).                                                  |
-| `armSkuName`           | `"Standard_D4s_v5"`                           | `armSkuName`                               | Normalised SKU for ARM APIs. Used when `skuName` is inconsistent across sources.                                                               |
-| `meterName`            | `"Data Stored"`, `"Compute Hours"`            | `meterName`                                | Indicates what is being billed (e.g. “Compute Hours”, “Transactions”, “Data Stored”). Used by all handlers for targeted filtering.             |
-| `meterId`              | `"b2a7c8e4-5fd3-4a47-b1a1-60ec1e1d3c0a"`      | `meterId`                                  | Unique Azure meter ID used for API-level lookups. Optional in CSV.                                                                             |
-| `unitOfMeasure`        | `"1 Hour"`, `"1 GB/Month"`, `"10,000"`        | `unitOfMeasure`                            | The billing unit for that meter (e.g. per hour, per GB-month, per 10 000 transactions). Key for per-unit cost calculation.                     |
-| `retailPrice`          | `0.125`                                       | `retailPrice`                              | Retail Pay-As-You-Go (PAYG) unit price for that meter. Expressed in the indicated `currencyCode`.                                              |
-| `currencyCode`         | `"AUD"`                                       | `currencyCode`                             | Currency for the given price (e.g., AUD, USD, EUR). Determined by region.                                                                      |
-| `priceType`            | `"Consumption"`, `"Reservation"`, `"DevTest"` | `priceType`                                | Indicates whether the row is standard PAYG, Reserved Instance, or Dev/Test pricing. All handlers default to `Consumption`.                     |
-| `armRegionName`        | `"australiaeast"`                             | `armRegionName` or derived from `region`   | Azure-internal normalised region key (lowercase, no spaces). Used by `arm_region()` helper.                                                    |
-| `region`               | `"Australia East"`                            | Derived / Display column                   | Human-readable Azure region label. In enterprise CSVs, may be blank (global).                                                                  |
-| `location`             | `"Australia East"`                            | `location` (Retail CSV)                    | Alternate region column in Retail CSVs (used when `armRegionName` is missing).                                                                 |
-| `serviceFamily`        | `"Compute"`, `"Storage"`, `"Databases"`       | `serviceFamily`                            | High-level service grouping (used to broaden search fallback when `serviceName` filtering fails).                                              |
-| `productId`            | `"DZH318Z0BQCS"`                              | `productId`                                | Azure internal ID for the product. Used for correlation and debugging.                                                                         |
-| `skuId`                | `"DZH318Z0BQCT"`                              | `skuId`                                    | Internal SKU identifier. May appear in enterprise sheets for EA/MCA billing alignment.                                                         |
-| `effectiveStartDate`   | `"2024-10-01T00:00:00Z"`                      | `effectiveStartDate`                       | When this price became effective. Used to filter out expired prices.                                                                           |
-| `effectiveEndDate`     | `null`                                        | `effectiveEndDate`                         | End of validity for this price. Null if still active.                                                                                          |
-| `reservationTerm`      | `"1 Year"`, `"3 Years"`                       | `reservationTerm`                          | Used for reserved capacity and RI-based offers (not applied in on-demand pricing).                                                             |
-| `isPrimaryMeterRegion` | `true`                                        | `isPrimaryMeterRegion`                     | Indicates whether this price is region-specific (true) or global (false). Handlers fall back to global when true is missing.                   |
-| `type`                 | `"Consumption"`                               | `type`                                     | Duplicate of `priceType` in some CSVs. Normalised internally to `priceType`.                                                                   |
-| `armSkuId`             | `"Standard_D4s_v5"`                           | Custom derived field                       | Computed from SKU where `armSkuName` missing.                                                                                                  |
-| `tierMinimumUnits`     | `1`                                           | `tierMinimumUnits`                         | Minimum billing quantity per meter (e.g. per 10 000 transactions). Used for normalising “per count” metrics.                                   |
-| `serviceId`            | `"DZH318Z0BQCS"`                              | `serviceId`                                | Unique ID for the service, internal Azure reference.                                                                                           |
-| `offerId`              | `"MS-AZR-0003P"`                              | Enterprise CSV (EA/MCA)                    | Offer identifier from Enterprise Agreement or MCA. Used in enterprise lookups only.                                                            |
-| `publisherId`          | `"Microsoft"`                                 | Enterprise CSV                             | Entity that publishes the meter (typically “Microsoft”).                                                                                       |
-| `term`                 | `"1 Year"`                                    | Enterprise CSV                             | Reservation or Savings Plan term (when applicable).                                                                                            |
-| `rate`                 | `0.09`                                        | Enterprise CSV                             | Unit rate (EA/MCA equivalent to `retailPrice`).                                                                                                |
-| `uom`                  | `"1 Hour"`                                    | Enterprise CSV (`Unit Of Measure`)         | Enterprise equivalent of `unitOfMeasure`. Harmonised by handlers for consistency.                                                              |
-| `regionName`           | `"Australia East"`                            | Enterprise CSV (`Region`)                  | Region column in EA/MCA sheets. May be empty for global SKUs.                                                                                  |
-| `skuCategory`          | `"Compute"`, `"Storage"`, `"Networking"`      | Derived                                    | Inferred from `serviceFamily` or `productName` to group cost components.                                                                       |
-| `pricingModel`         | `"Retail"`, `"Enterprise"`                    | Derived                                    | Indicates whether the price originated from Retail or Enterprise sheet.                                                                        |
-| `quantity`             | `2`, `1000`, `1048576`                        | Derived from BOM (`instances`, `tb`, etc.) | Runtime-only field computed in `run_model` for unified per-component quantity input.                                                           |

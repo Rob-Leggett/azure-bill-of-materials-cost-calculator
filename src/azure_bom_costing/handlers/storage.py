@@ -7,33 +7,12 @@ from ..helpers.string import stripped
 from ..types import Key
 
 def price_storage(component, region, currency, ent_prices: Dict[Key, Decimal]):
-    service = stripped(component.get("service"), "Storage")
+    service = stripped(component.get("service"), None)
     product = stripped(component.get("product"), None)
-    sku     = stripped(component.get("sku"), "") or ""                 # e.g. "Standard LRS Hot", "Archive GRS"
-    uom     = stripped(component.get("uom"), None)                     # e.g. "1 GB/Month", "10,000", "1 Hour"
-
-    # Quantity source (GB/TB/ops), prioritising explicit quantity -> gb -> tb -> ops
-    qty = decimal(
-        component.get(
-            "quantity",
-            component.get(
-                "gb",
-                component.get(
-                    "tb",
-                    component.get("operations_per_month", 1),
-                ),
-            ),
-        )
-    )
-
-    # Convert TB → GB if UOM is GB-based and gb not already provided
-    if "tb" in component and "gb" not in component:
-        uom_l = (uom or "").lower()
-        if "gb" in uom_l:
-            qty = decimal(component["tb"]) * decimal(1024)
-
-    # Hours: storage is monthly unless explicitly hourly
-    hours = decimal(component.get("hours_per_month", 1 if (uom or "").lower() != "1 hour" else 730))
+    sku     = stripped(component.get("sku"), None)
+    uom     = stripped(component.get("uom"), None)
+    qty     = decimal(component.get("quantity"), None)
+    hours   = decimal(component.get("hours_per_month"), None)
 
     return price_by_service(
         service=service,

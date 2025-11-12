@@ -7,15 +7,12 @@ from ..helpers.string import stripped
 from ..types import Key
 
 def price_load_balancers(component, region, currency, ent_prices: Dict[Key, Decimal]):
-    service = stripped(component.get("service"), "Load Balancer")           # Azure service name
-    product = stripped(component.get("product"), None)                      # optional
-    sku     = stripped(component.get("sku"), "") or ""                      # e.g., "Standard Rule Hour", "Data Processed"
-    uom     = stripped(component.get("uom"), "1 Hour") or None              # e.g., "1 Hour", "1 GB"
-    qty     = decimal(component.get("quantity", component.get("instances", component.get("gb", 1))))
-
-    # Default billing hours: 730 if hourly, otherwise monthly (1)
-    uom_l = (uom or "").lower()
-    hours = decimal(component.get("hours_per_month", 730 if "hour" in uom_l else 1))
+    service = stripped(component.get("service"), None)
+    product = stripped(component.get("product"), None)
+    sku     = stripped(component.get("sku"), None)
+    uom     = stripped(component.get("uom"), None)
+    qty     = decimal(component.get("quantity"), None)
+    hours   = decimal(component.get("hours_per_month"), None)
 
     return price_by_service(
         service=service,

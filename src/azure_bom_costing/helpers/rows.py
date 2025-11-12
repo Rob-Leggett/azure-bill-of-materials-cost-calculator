@@ -7,6 +7,21 @@ from .math import decimal
 
 CsvRow = Dict[str, object]
 
+def prefer_region(rows: List[CsvRow], region: str) -> List[CsvRow]:
+    """Sort rows so exact armRegionName match appears first, then global/empty."""
+    arm_l = arm_region(region).lower()
+    def keyfn(r: CsvRow) -> int:
+        row_arm = (str(r.get("armRegionName") or "")).lower()
+        if row_arm == arm_l:
+            return 0
+        if row_arm == "":
+            return 1
+        return 2
+    return sorted(rows, key=keyfn)
+
+def pick_first(rows: List[CsvRow]) -> Optional[CsvRow]:
+    return rows[0] if rows else None
+
 def _text(i: CsvRow) -> str:
     return " ".join([
         str(i.get("serviceName") or ""),
@@ -89,18 +104,3 @@ def filter_rows(
 
         out.append(i)
     return out
-
-def prefer_region(rows: List[CsvRow], region: str) -> List[CsvRow]:
-    """Sort rows so exact armRegionName match appears first, then global/empty."""
-    arm_l = arm_region(region).lower()
-    def keyfn(r: CsvRow) -> int:
-        row_arm = (str(r.get("armRegionName") or "")).lower()
-        if row_arm == arm_l:
-            return 0
-        if row_arm == "":
-            return 1
-        return 2
-    return sorted(rows, key=keyfn)
-
-def pick_first(rows: List[CsvRow]) -> Optional[CsvRow]:
-    return rows[0] if rows else None

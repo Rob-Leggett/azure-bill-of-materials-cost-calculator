@@ -7,13 +7,12 @@ from ..helpers.string import stripped
 from ..types import Key
 
 def price_governance(component, region, currency, ent_prices: Dict[Key, Decimal]):
-    # Leaving service name overridable to match your CSV exactly (could be 'Policy', 'Cost Management', etc.)
-    service = stripped(component.get("service"), "Governance")          # default high-level service name
-    product = stripped(component.get("product"), None)                  # optional
-    sku     = stripped(component.get("sku"), "") or ""                  # e.g., "Policy Assessment", "Blueprints"
-    uom     = stripped(component.get("uom"), "1 Unit") or None          # often "1 Unit" or similar metric
-    qty     = decimal(component.get("quantity", 1))                     # usually monthly event count
-    hours   = decimal(component.get("hours_per_month", 1))              # billed per month by default
+    service = stripped(component.get("service"), None)
+    product = stripped(component.get("product"), None)
+    sku     = stripped(component.get("sku"), None)
+    uom     = stripped(component.get("uom"), None)
+    qty     = decimal(component.get("quantity"), None)
+    hours   = decimal(component.get("hours_per_month"), None)
 
     return price_by_service(
         service=service,

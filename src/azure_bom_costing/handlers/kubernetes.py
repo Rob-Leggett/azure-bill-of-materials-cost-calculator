@@ -7,12 +7,12 @@ from ..helpers.string import stripped
 from ..types import Key
 
 def price_kubernetes(component, region, currency, ent_prices: Dict[Key, Decimal]):
-    service = stripped(component.get("service"), "Kubernetes Service")      # default AKS service name
+    service = stripped(component.get("service"), None)
     product = stripped(component.get("product"), None)
-    sku     = stripped(component.get("sku"), "") or ""                      # e.g., "Uptime SLA", "Control Plane"
-    uom     = stripped(component.get("uom"), "1 Hour") or None              # typical AKS billing unit
-    qty     = decimal(component.get("quantity", component.get("clusters", component.get("instances", 1))))
-    hours   = decimal(component.get("hours_per_month", 730))                # hourly metering by default
+    sku     = stripped(component.get("sku"), None)
+    uom     = stripped(component.get("uom"), None)
+    qty     = decimal(component.get("quantity"), None)
+    hours   = decimal(component.get("hours_per_month"), None)
 
     return price_by_service(
         service=service,

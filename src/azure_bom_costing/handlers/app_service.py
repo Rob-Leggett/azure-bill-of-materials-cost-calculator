@@ -7,13 +7,12 @@ from ..helpers.string import stripped
 from ..types import Key
 
 def price_app_service(component, region, currency, ent_prices: Dict[Key, Decimal]):
-    service = stripped(component.get("service"), "App Service")            # default to App Service
-    product = stripped(component.get("product"), None)                     # optional
-    sku     = stripped(component.get("sku"), "") or ""                     # e.g., "P1v4", "B1", etc.
-    uom     = stripped(component.get("uom"), "1 Hour") or None             # typical for compute plans
-    qty     = decimal(component.get("quantity", component.get("instances", 1)))  # instance count
-    hours   = decimal(component.get("hours_per_month", 730))               # compute hours per month
-
+    service = stripped(component.get("service"), None)
+    product = stripped(component.get("product"), None)
+    sku     = stripped(component.get("sku"), None)
+    uom     = stripped(component.get("uom"), None)
+    qty     = decimal(component.get("quantity"), None)
+    hours   = decimal(component.get("hours_per_month"), None)
 
     return price_by_service(
         service=service,

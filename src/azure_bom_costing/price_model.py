@@ -105,7 +105,6 @@ def run_model(
         enterprise_csv: Optional[str],          # local CSV fallback
         aad_token: Optional[str],               # token (if using enterprise_api); else None
 ) -> None:
-    region = bom["region"]
     currency = currency_override or bom.get("currency", "AUD")
     assumptions = bom.get("assumptions", {})
 
@@ -134,7 +133,6 @@ def run_model(
         if not ent_prices and enterprise_csv:
             tried_enterprise = True
             ent_prices = load_enterprise_csv(enterprise_csv)
-
     except Exception as e:
         print(f"[WARN] Enterprise pricing failed: {e}. Using retail only.")
 
@@ -143,38 +141,39 @@ def run_model(
     elif not tried_enterprise:
         print("[INFO] Enterprise pricing not configured; using retail only.")
 
-    # ---------- Handlers (no aliases) ----------
-    handlers: Dict[str, Callable[[Dict[str, Any]], Tuple[Decimal, str]]] = {
-        "open_ai":         lambda c: price_open_ai(c, region, currency, ent_prices),
-        "kubernetes":      lambda c: price_kubernetes(c, region, currency, ent_prices),
-        "api_management":  lambda c: price_api_management(c, region, currency, ent_prices),
-        "app_insights":    lambda c: price_app_insights(c, region, currency, ent_prices),
-        "app_service":     lambda c: price_app_service(c, region, currency, ent_prices),
-        "egress":          lambda c: price_egress(c, region, currency, ent_prices),
-        "backup":          lambda c: price_backup(c, region, currency, ent_prices),
-        "cognitive_search":lambda c: price_cognitive_search(c, region, currency, ent_prices),
-        "container_apps":  lambda c: price_container_apps(c, region, currency, ent_prices),
-        "data_factory":    lambda c: price_data_factory(c, region, currency, ent_prices),
-        "databricks":      lambda c: price_databricks(c, region, currency, ent_prices),
-        "defender":        lambda c: price_defender(c, region, currency, ent_prices),
-        "dev_ops":         lambda c: price_dev_ops(c, region, currency, ent_prices),
-        "dns":             lambda c: price_dns(c, region, currency, ent_prices),
-        "entra_id":        lambda c: price_entra_id(c, region, currency, ent_prices),
-        "event_hubs":      lambda c: price_event_hubs(c, region, currency, ent_prices),
-        "fabric":          lambda c: price_fabric(c, region, currency, ent_prices),
-        "front_door":      lambda c: price_front_door(c, region, currency, ent_prices),
-        "functions":       lambda c: price_functions(c, region, currency, ent_prices),
-        "governance":      lambda c: price_governance(c, region, currency, ent_prices),
-        "key_vault":       lambda c: price_key_vault(c, region, currency, ent_prices),
-        "load_balancers":  lambda c: price_load_balancers(c, region, currency, ent_prices),
-        "log_analytics":   lambda c: price_log_analytics(c, region, currency, ent_prices),
-        "private_network": lambda c: price_private_network(c, region, currency, ent_prices),
-        "redis":           lambda c: price_redis(c, region, currency, ent_prices),
-        "sql":             lambda c: price_sql(c, region, currency, ent_prices),
-        "storage":         lambda c: price_storage(c, region, currency, ent_prices),
-        "synapse":         lambda c: price_synapse(c, region, currency, ent_prices),
-        "vm":              lambda c: price_vm(c, region, currency, ent_prices),
-    }
+    # ---------- Handlers (region will now be passed dynamically) ----------
+    def _make_handlers(region: str) -> Dict[str, Callable[[Dict[str, Any]], Tuple[Decimal, str]]]:
+        return {
+            "open_ai":         lambda c: price_open_ai(c, region, currency, ent_prices),
+            "kubernetes":      lambda c: price_kubernetes(c, region, currency, ent_prices),
+            "api_management":  lambda c: price_api_management(c, region, currency, ent_prices),
+            "app_insights":    lambda c: price_app_insights(c, region, currency, ent_prices),
+            "app_service":     lambda c: price_app_service(c, region, currency, ent_prices),
+            "egress":          lambda c: price_egress(c, region, currency, ent_prices),
+            "backup":          lambda c: price_backup(c, region, currency, ent_prices),
+            "cognitive_search":lambda c: price_cognitive_search(c, region, currency, ent_prices),
+            "container_apps":  lambda c: price_container_apps(c, region, currency, ent_prices),
+            "data_factory":    lambda c: price_data_factory(c, region, currency, ent_prices),
+            "databricks":      lambda c: price_databricks(c, region, currency, ent_prices),
+            "defender":        lambda c: price_defender(c, region, currency, ent_prices),
+            "dev_ops":         lambda c: price_dev_ops(c, region, currency, ent_prices),
+            "dns":             lambda c: price_dns(c, region, currency, ent_prices),
+            "entra_id":        lambda c: price_entra_id(c, region, currency, ent_prices),
+            "event_hubs":      lambda c: price_event_hubs(c, region, currency, ent_prices),
+            "fabric":          lambda c: price_fabric(c, region, currency, ent_prices),
+            "front_door":      lambda c: price_front_door(c, region, currency, ent_prices),
+            "functions":       lambda c: price_functions(c, region, currency, ent_prices),
+            "governance":      lambda c: price_governance(c, region, currency, ent_prices),
+            "key_vault":       lambda c: price_key_vault(c, region, currency, ent_prices),
+            "load_balancers":  lambda c: price_load_balancers(c, region, currency, ent_prices),
+            "log_analytics":   lambda c: price_log_analytics(c, region, currency, ent_prices),
+            "private_network": lambda c: price_private_network(c, region, currency, ent_prices),
+            "redis":           lambda c: price_redis(c, region, currency, ent_prices),
+            "sql":             lambda c: price_sql(c, region, currency, ent_prices),
+            "storage":         lambda c: price_storage(c, region, currency, ent_prices),
+            "synapse":         lambda c: price_synapse(c, region, currency, ent_prices),
+            "vm":              lambda c: price_vm(c, region, currency, ent_prices),
+        }
 
     # ---------- Run ----------
     grand_total_opt = Decimal(0)
@@ -182,8 +181,11 @@ def run_model(
     print(f"{'Workload':25} {'Tier':8} {'PAYG est.':>16} {'With Opt.':>16}")
 
     for wl in bom.get("workloads", []):
+        region = wl.get("region", "australiaeast").lower()
+        handlers = _make_handlers(region)
+
         wl_total = Decimal(0)
-        print(f"\n-- {wl.get('name','(unnamed)')} components --")
+        print(f"\n-- {wl.get('name','(unnamed)')} components ({region}) --")
 
         for comp in wl.get("components", []):
             t = comp.get("type")
@@ -194,14 +196,13 @@ def run_model(
                 continue
 
             c = _prepare_component(comp, assumptions)
-
             try:
                 cost, desc = fn(c)
             except Exception as e:
                 cost, desc = Decimal(0), f"Error: {e}"
 
             wl_total += cost
-            print(f"  • {t:<18}  {desc:<70}  = ${cost:,.2f}")
+            print(f"  • {t:<18} {desc:<70} = ${cost:,.2f}")
 
         wl_total_opt = apply_optimisations(wl_total, assumptions)
         grand_total_opt += wl_total_opt
