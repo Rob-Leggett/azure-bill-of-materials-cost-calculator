@@ -3,65 +3,305 @@
   "assumptions": {
     "hours_per_month": 730,
     "fabric_workdays_per_month": 22,
-    "savings_plan": { "term_years": 1, "coverage_pct": 0.6 },
-    "ri": { "term_years": 3, "coverage_pct": 0.25 },
+    "savings_plan": {
+      "term_years": 1,
+      "coverage_pct": 0.6
+    },
+    "ri": {
+      "term_years": 3,
+      "coverage_pct": 0.25
+    },
     "devtest_discount": false,
     "egress_gb_per_month": 500
   },
   "workloads": [
     {
       "name": "All-Services-AE",
-      "region": "australiaeast",
+      "region": "Australia East",
       "tier": "prod",
       "components": [
-        { "type": "app_service",      "service": "App Service",             "sku": "P1v3",                     "instances": 3, "hours_per_month": 730, "purpose": "Client & Partner Portals, ShareDo extensions" },
-        { "type": "functions",        "service": "Functions",               "sku": "Consumption",               "executions": 0,                   "hours_per_month": 1,   "purpose": "API & event-driven logic" },
-        { "type": "kubernetes",       "service": "Kubernetes Service",      "sku": "Uptime SLA",                "clusters": 1,  "hours_per_month": 730, "purpose": "Modernised LPS modules (containers)" },
-        { "type": "container_apps",   "service": "Container Apps",          "sku": "Standard",                  "instances": 2, "hours_per_month": 730, "purpose": "Background processing / lightweight jobs" },
-        { "type": "vm",               "service": "Virtual Machines",        "sku": "Standard_D2_v5",            "instances": 2, "hours_per_month": 730, "purpose": "Legacy lift-and-shift apps" },
-
-        { "type": "dns",              "service": "DNS",                      "sku": "Zones",                     "zones": 1,     "queries": 0,           "hours_per_month": 730, "purpose": "Public/Private DNS" },
-        { "type": "private_network",  "service": "Virtual Network",          "sku": "Private Link",              "instances": 4, "hours_per_month": 730, "purpose": "Private connectivity to PaaS" },
-        { "type": "vpn_gateway",      "service": "VPN Gateway",              "sku": "VpnGw2",                    "instances": 1, "hours_per_month": 730, "purpose": "Hybrid connectivity" },
-        { "type": "front_door",       "service": "Azure Front Door",         "sku": "Standard+WAF",              "requests_millions": 0, "egress_gb": 0, "hours_per_month": 730, "purpose": "External access & web protection" },
-        { "type": "expressroute",     "service": "ExpressRoute",             "sku": "1Gbps",                     "circuits": 1,  "hours_per_month": 730, "purpose": "Private link to on-prem datacentre" },
-
-        { "type": "defender",         "service": "Microsoft Defender",       "sku": "Defender for Cloud",        "resources": 1, "hours_per_month": 730, "purpose": "Threat protection" },
-        { "type": "sentinel",         "service": "Microsoft Sentinel",       "sku": "PayGo",                     "gb": 0,        "hours_per_month": 1,   "purpose": "SIEM & central logging" },
-        { "type": "key_vault",        "service": "Key Vault",                "sku": "Standard",                  "operations": 0,"hours_per_month": 1,   "purpose": "Secrets, certificates, keys" },
-
-        { "type": "fabric",           "service": "Microsoft Fabric",         "sku": "F64",                       "capacity_units": 64, "hours_per_month": 730, "purpose": "Data Lakehouse + Power BI capacity" },
-        { "type": "sql",              "service": "SQL Database",             "sku": "BusinessCritical_8_vCore",  "vcores": 8,    "hours_per_month": 730, "purpose": "ShareDo, Portal & Finance databases" },
-        { "type": "data_factory",     "service": "Data Factory",             "sku": "Pipeline Activity",         "quantity": 0,  "hours_per_month": 1,   "purpose": "ETL & integration pipelines" },
-        { "type": "storage",          "service": "Storage (Blob)",           "sku": "Hot",                       "tb": 5,        "transactions_per_month": 0, "purpose": "Documents (iManage, ShareDo)" },
-        { "type": "storage",          "service": "Data Lake Gen2",           "sku": "Cool",                      "tb": 1,        "transactions_per_month": 0, "purpose": "Analytics & AI data" },
-
-        { "type": "open_ai",          "service": "Cognitive Services",       "sku": "gpt-4o",                    "tokens_1k": 0, "hours_per_month": 1,   "purpose": "Triage, chat, client insight" },
-        { "type": "cognitive_search", "service": "Cognitive Search",         "sku": "S1",                        "instances": 1, "hours_per_month": 730, "purpose": "Document indexing & search" },
-
-        { "type": "service_bus",      "service": "Service Bus",              "sku": "Premium P1",                "instances": 2, "hours_per_month": 730, "purpose": "Reliable messaging between systems" },
-        { "type": "event_grid",       "service": "Event Grid",               "sku": "Standard",                  "events": 0,    "hours_per_month": 1,   "purpose": "Event-driven orchestration" },
-        { "type": "logic_apps",       "service": "Logic Apps",               "sku": "Standard",                  "executions": 0,"hours_per_month": 1,   "purpose": "Salesforce/DocuSign workflows" },
-
-        { "type": "app_insights",     "service": "Application Insights",     "sku": "Ingest",                    "gb": 0,        "hours_per_month": 1,   "purpose": "App telemetry" },
-        { "type": "log_analytics",    "service": "Log Analytics",            "sku": "Per GB",                    "gb": 0,        "hours_per_month": 1,   "purpose": "Logs & metrics" },
-        { "type": "automation",       "service": "Automation",               "sku": "Jobs",                      "quantity": 0,  "hours_per_month": 1,   "purpose": "Runbooks & patching" },
-
-        { "type": "storage",          "service": "Archive Storage",          "sku": "Archive",                   "tb": 1,        "transactions_per_month": 0, "purpose": "Long-term retention" },
-        { "type": "backup",           "service": "Backup",                   "sku": "Protected Instance",        "quantity": 1,  "hours_per_month": 1,   "purpose": "Backup of VMs/SQL/storage" },
-        { "type": "site_recovery",    "service": "Site Recovery",            "sku": "Standard",                  "protected_vms": 1, "hours_per_month": 730, "purpose": "DR replication" }
+        {
+          "type": "app_service",
+          "service": "Azure App Service",
+          "sku": "P1v3",
+          "instances": 3,
+          "hours_per_month": 730,
+          "purpose": "Client & Partner Portals"
+        },
+        {
+          "type": "functions",
+          "service": "Functions",
+          "sku": "Consumption",
+          "executions": 0,
+          "hours_per_month": 1,
+          "purpose": "API & event-driven logic"
+        },
+        {
+          "type": "kubernetes",
+          "service": "Kubernetes Service",
+          "sku": "Uptime SLA",
+          "clusters": 1,
+          "hours_per_month": 730,
+          "purpose": "Modernised modules (containers)"
+        },
+        {
+          "type": "container_apps",
+          "service": "Container Apps",
+          "sku": "Standard",
+          "instances": 2,
+          "hours_per_month": 730,
+          "purpose": "Background processing / lightweight jobs"
+        },
+        {
+          "type": "vm",
+          "service": "Virtual Machines",
+          "sku": "Standard_D2_v5",
+          "instances": 2,
+          "hours_per_month": 730,
+          "purpose": "Legacy lift-and-shift apps"
+        },
+        {
+          "type": "dns",
+          "service": "DNS",
+          "sku": "Zones",
+          "zones": 1,
+          "queries": 0,
+          "hours_per_month": 730,
+          "purpose": "Public/Private DNS"
+        },
+        {
+          "type": "private_network",
+          "service": "Virtual Network",
+          "sku": "Private Link",
+          "instances": 4,
+          "hours_per_month": 730,
+          "purpose": "Private connectivity to PaaS"
+        },
+        {
+          "type": "vpn_gateway",
+          "service": "VPN Gateway",
+          "sku": "VpnGw2",
+          "instances": 1,
+          "hours_per_month": 730,
+          "purpose": "Hybrid connectivity"
+        },
+        {
+          "type": "front_door",
+          "service": "Azure Front Door",
+          "sku": "Standard+WAF",
+          "requests_millions": 0,
+          "egress_gb": 0,
+          "hours_per_month": 730,
+          "purpose": "External access & web protection"
+        },
+        {
+          "type": "expressroute",
+          "service": "ExpressRoute",
+          "sku": "1Gbps",
+          "circuits": 1,
+          "hours_per_month": 730,
+          "purpose": "Private link to on-prem datacentre"
+        },
+        {
+          "type": "defender",
+          "service": "Microsoft Defender",
+          "sku": "Defender for Cloud",
+          "resources": 1,
+          "hours_per_month": 730,
+          "purpose": "Threat protection"
+        },
+        {
+          "type": "sentinel",
+          "service": "Microsoft Sentinel",
+          "sku": "PayGo",
+          "gb": 0,
+          "hours_per_month": 1,
+          "purpose": "SIEM & central logging"
+        },
+        {
+          "type": "key_vault",
+          "service": "Key Vault",
+          "sku": "Standard",
+          "operations": 0,
+          "hours_per_month": 1,
+          "purpose": "Secrets, certificates, keys"
+        },
+        {
+          "type": "fabric",
+          "service": "Microsoft Fabric",
+          "sku": "F64",
+          "capacity_units": 64,
+          "hours_per_month": 730,
+          "purpose": "Data Lakehouse + Power BI capacity"
+        },
+        {
+          "type": "sql",
+          "service": "SQL Database",
+          "sku": "BusinessCritical_8_vCore",
+          "vcores": 8,
+          "hours_per_month": 730,
+          "purpose": "Portal & Finance databases"
+        },
+        {
+          "type": "data_factory",
+          "service": "Data Factory",
+          "sku": "Pipeline Activity",
+          "quantity": 0,
+          "hours_per_month": 1,
+          "purpose": "ETL & integration pipelines"
+        },
+        {
+          "type": "storage",
+          "service": "Storage (Blob)",
+          "sku": "Hot",
+          "tb": 5,
+          "transactions_per_month": 0,
+          "purpose": "Documents"
+        },
+        {
+          "type": "storage",
+          "service": "Data Lake Gen2",
+          "sku": "Cool",
+          "tb": 1,
+          "transactions_per_month": 0,
+          "purpose": "Analytics & AI data"
+        },
+        {
+          "type": "open_ai",
+          "service": "Cognitive Services",
+          "sku": "gpt-4o",
+          "tokens_1k": 0,
+          "hours_per_month": 1,
+          "purpose": "Triage, chat, client insight"
+        },
+        {
+          "type": "cognitive_search",
+          "service": "Cognitive Search",
+          "sku": "S1",
+          "instances": 1,
+          "hours_per_month": 730,
+          "purpose": "Document indexing & search"
+        },
+        {
+          "type": "service_bus",
+          "service": "Service Bus",
+          "sku": "Premium P1",
+          "instances": 2,
+          "hours_per_month": 730,
+          "purpose": "Reliable messaging between systems"
+        },
+        {
+          "type": "event_grid",
+          "service": "Event Grid",
+          "sku": "Standard",
+          "events": 0,
+          "hours_per_month": 1,
+          "purpose": "Event-driven orchestration"
+        },
+        {
+          "type": "logic_apps",
+          "service": "Logic Apps",
+          "sku": "Standard",
+          "executions": 0,
+          "hours_per_month": 1,
+          "purpose": "Salesforce/DocuSign workflows"
+        },
+        {
+          "type": "app_insights",
+          "service": "Application Insights",
+          "sku": "Ingest",
+          "gb": 0,
+          "hours_per_month": 1,
+          "purpose": "App telemetry"
+        },
+        {
+          "type": "log_analytics",
+          "service": "Log Analytics",
+          "sku": "Per GB",
+          "gb": 0,
+          "hours_per_month": 1,
+          "purpose": "Logs & metrics"
+        },
+        {
+          "type": "automation",
+          "service": "Automation",
+          "sku": "Jobs",
+          "quantity": 0,
+          "hours_per_month": 1,
+          "purpose": "Runbooks & patching"
+        },
+        {
+          "type": "storage",
+          "service": "Archive Storage",
+          "sku": "Archive",
+          "tb": 1,
+          "transactions_per_month": 0,
+          "purpose": "Long-term retention"
+        },
+        {
+          "type": "backup",
+          "service": "Backup",
+          "sku": "Protected Instance",
+          "quantity": 1,
+          "hours_per_month": 1,
+          "purpose": "Backup of VMs/SQL/storage"
+        },
+        {
+          "type": "site_recovery",
+          "service": "Site Recovery",
+          "sku": "Standard",
+          "protected_vms": 1,
+          "hours_per_month": 730,
+          "purpose": "DR replication"
+        }
       ]
     },
     {
       "name": "All-Services-ASE",
-      "region": "australiasoutheast",
+      "region": "Australia South East",
       "tier": "prod",
       "components": [
-        { "type": "app_service",      "service": "App Service",             "sku": "P1v3",           "instances": 0, "hours_per_month": 730, "purpose": "Regional capacity (Melbourne) — set if active/active" },
-        { "type": "kubernetes",       "service": "Kubernetes Service",      "sku": "Uptime SLA",    "clusters": 0,  "hours_per_month": 730, "purpose": "Secondary region (if required)" },
-        { "type": "front_door",       "service": "Azure Front Door",        "sku": "Standard+WAF",  "requests_millions": 0, "egress_gb": 0, "hours_per_month": 730, "purpose": "Global entry — same policy applies" },
-        { "type": "expressroute",     "service": "ExpressRoute",            "sku": "1Gbps",         "circuits": 0,  "hours_per_month": 730, "purpose": "Secondary circuit if dual-home" },
-        { "type": "storage",          "service": "Storage (Blob)",          "sku": "Hot",           "tb": 0,        "transactions_per_month": 0, "purpose": "Geo-redundant data (optional)" }
+        {
+          "type": "app_service",
+          "service": "Azure App Service",
+          "sku": "P1v3",
+          "instances": 0,
+          "hours_per_month": 730,
+          "purpose": "Regional capacity (Melbourne) — set if active/active"
+        },
+        {
+          "type": "kubernetes",
+          "service": "Kubernetes Service",
+          "sku": "Uptime SLA",
+          "clusters": 0,
+          "hours_per_month": 730,
+          "purpose": "Secondary region (if required)"
+        },
+        {
+          "type": "front_door",
+          "service": "Azure Front Door",
+          "sku": "Standard+WAF",
+          "requests_millions": 0,
+          "egress_gb": 0,
+          "hours_per_month": 730,
+          "purpose": "Global entry — same policy applies"
+        },
+        {
+          "type": "expressroute",
+          "service": "ExpressRoute",
+          "sku": "1Gbps",
+          "circuits": 0,
+          "hours_per_month": 730,
+          "purpose": "Secondary circuit if dual-home"
+        },
+        {
+          "type": "storage",
+          "service": "Storage (Blob)",
+          "sku": "Hot",
+          "tb": 0,
+          "transactions_per_month": 0,
+          "purpose": "Geo-redundant data (optional)"
+        }
       ]
     }
   ]

@@ -27,28 +27,28 @@ src/azure_bom_costing/cli.py — entrypoint for the azure-bom CLI.
 
 ## How to run
 
-### Run (Retail only)
+### Run (Retail only) - AVAILABLE
 ```
 azure-bom --bom examples/azure_bom.json --retail-csv examples/retail_prices.sample.csv --currency AUD 
 ```
 
-### Run with Enterprise API (MCA)
+### Run with Enterprise API (MCA) - COMING LATER
 ```
 export AZ_TENANT_ID=...
 export AZ_CLIENT_ID=...
 export AZ_CLIENT_SECRET=...
-azure-bom --enterprise-api mca --billing-account <BA_ID> --retail-csv examples/retail_prices.sample.csv --currency AUD
+azure-bom --enterprise-price-sheet-api mca --billing-account <BA_ID> --retail-csv examples/retail_prices.sample.csv --currency AUD
 ```
 
-### Run with Enterprise API (EA)
+### Run with Enterprise API (EA) - COMING LATER
 ```
 export AZ_TENANT_ID=...
 export AZ_CLIENT_ID=...
 export AZ_CLIENT_SECRET=...
-azure-bom --enterprise-api ea --enrollment_account <EA_ID> --retail-csv examples/retail_prices.sample.csv --currency AUD
+azure-bom --enterprise-price-sheet-api ea --enrollment_account <EA_ID> --retail-csv examples/retail_prices.sample.csv --currency AUD
 ```
 
-### Run with Enterprise CSV (no API yet)
+### Run with Enterprise & Retail CSV (no API yet) - COMING LATER
 ```
 azure-bom --enterprise-csv examples/enterprise_prices.sample.csv --retail-csv examples/retail_prices.sample.csv --currency AUD
 ```
@@ -71,10 +71,10 @@ azure-bom --enterprise-csv examples/enterprise_prices.sample.csv --retail-csv ex
   "workloads": [
     {
       "name": "All-Services-AE",
-      "region": "australiaeast",
+      "region": "Australia East",
       "tier": "prod",
       "components": [
-        { "type": "app_service",      "service": "App Service",             "sku": "P1v3",                     "instances": 3, "hours_per_month": 730, "purpose": "Client & Partner Portals, ShareDo extensions" },
+        { "type": "app_service",      "service": "Azure App Service",             "sku": "P1v3",                     "instances": 3, "hours_per_month": 730, "purpose": "Client & Partner Portals, ShareDo extensions" },
         { "type": "functions",        "service": "Functions",               "sku": "Consumption",               "executions": 0,                   "hours_per_month": 1,   "purpose": "API & event-driven logic" },
         { "type": "kubernetes",       "service": "Kubernetes Service",      "sku": "Uptime SLA",                "clusters": 1,  "hours_per_month": 730, "purpose": "Modernised LPS modules (containers)" },
         { "type": "container_apps",   "service": "Container Apps",          "sku": "Standard",                  "instances": 2, "hours_per_month": 730, "purpose": "Background processing / lightweight jobs" },
@@ -114,10 +114,10 @@ azure-bom --enterprise-csv examples/enterprise_prices.sample.csv --retail-csv ex
     },
     {
       "name": "All-Services-ASE",
-      "region": "australiasoutheast",
+      "region": "Australia South East",
       "tier": "prod",
       "components": [
-        { "type": "app_service",      "service": "App Service",             "sku": "P1v3",           "instances": 0, "hours_per_month": 730, "purpose": "Regional capacity (Melbourne) — set if active/active" },
+        { "type": "app_service",      "service": "Azure App Service",             "sku": "P1v3",           "instances": 0, "hours_per_month": 730, "purpose": "Regional capacity (Melbourne) — set if active/active" },
         { "type": "kubernetes",       "service": "Kubernetes Service",      "sku": "Uptime SLA",    "clusters": 0,  "hours_per_month": 730, "purpose": "Secondary region (if required)" },
         { "type": "front_door",       "service": "Azure Front Door",        "sku": "Standard+WAF",  "requests_millions": 0, "egress_gb": 0, "hours_per_month": 730, "purpose": "Global entry — same policy applies" },
         { "type": "expressroute",     "service": "ExpressRoute",            "sku": "1Gbps",         "circuits": 0,  "hours_per_month": 730, "purpose": "Secondary circuit if dual-home" },

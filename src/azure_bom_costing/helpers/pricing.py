@@ -1,12 +1,14 @@
+import logging
 from decimal import Decimal
 from typing import Dict, List, Optional, Set, Tuple
 
-from .rows import filter_rows, prefer_region, pick_first
-from .csv import dedup_merge, arm_region
+from .csv import dedup_merge, arm_region, filter_rows, prefer_region, pick_first
 from .math import decimal
 from ..pricing.enterprise import enterprise_lookup
 from ..pricing.retail import retail_fetch_items
 from ..types import Key
+
+logger = logging.getLogger(__name__)
 
 def price_by_service(
         *,
@@ -31,6 +33,8 @@ def price_by_service(
     3) CSV filter: accept price type from priceType|type; prefer region; first pick
     4) Compute total = unit × qty × hours
     """
+    logger.debug(f"Starting price lookup: service={service}, sku={sku}, region={region}, currency={currency}")
+
     # ---------- Enterprise price ----------
     ent = enterprise_lookup(ent_prices, service, sku, region, uom or "")
     if ent is not None:
@@ -41,6 +45,7 @@ def price_by_service(
 
     # ---------- Retail fallback ----------
     arm = arm_region(region)
+    logger.debug(f"No enterprise match found, using retail fallback via ARM region '{arm}'")
 
     # Be permissive in fetch (some CSVs leave 'priceType' blank and only set 'type')
     filters: List[str] = [
@@ -54,10 +59,11 @@ def price_by_service(
         ]
 
     items = dedup_merge([retail_fetch_items(f, currency) for f in filters])
+    logger.debug(f"Fetched {len(items)} retail items for {service}{' / ' + product if product else ''}")
 
-    # Defaults: allow on-demand + dev/test (exclude Reservation implicitly)
+    # Defaults: allow on-demand + dev/test, Reservation
     if allowed_price_types is None:
-        allowed_price_types = {"Consumption", "DevTestConsumption"}
+        allowed_price_types = {"Consumption", "DevTestConsumption", "Reservation"}
 
     tokens = [t.lower() for t in (must_contain or []) if t]
 
@@ -87,4 +93,5 @@ def price_by_service(
 
     total = unit * qty * hours
     desc  = f"{service}{(' / ' + product) if product else ''} {sku} @{unit}/{uom or 'unit'} × {qty} × {hours}"
+    logger.info(f"Computed total for {service} {sku}: unit={unit}, total={total}, region={region}")
     return total, desc
