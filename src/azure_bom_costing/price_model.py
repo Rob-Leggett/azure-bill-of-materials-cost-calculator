@@ -42,69 +42,109 @@ from .pricing.enterprise import (
     load_enterprise_csv,
     normalise_enterprise_rows,
 )
-from .pricing.retail import ensure_retail_cache, set_default_retail_csv
+from .pricing.retail import download_retail_pages
 from .types import Key
 
 log = logging.getLogger(__name__)
 
 
-# ---------- Component prep helpers ----------
+# ---------------------------------------------------------------------------
+# Component prep helpers
+# ---------------------------------------------------------------------------
 
 def _derive_quantity(component: Dict[str, Any]) -> Decimal:
     """
-    Derive a neutral 'quantity' if not explicitly provided. This is UoM-agnostic.
-    We look for common scale hints used across your BOMs.
+    Derive a neutral 'quantity' if not explicitly provided.
+
+    This is UoM-agnostic – individual handlers can still interpret the
+    quantity in whatever way makes sense for their service.
     """
     if "quantity" in component:
         return decimal(component["quantity"])
 
-    for k in (
-            "instances", "vcores", "gateway_units", "capacity_units",
-            "operations_per_month", "requests_per_month",
-            "executions", "egress_gb", "gb", "tb", "tokens_1k", "images",
-            "dwu", "clusters", "nodes", "calls_per_million", "requests_millions",
-            "waf_policies", "waf_rules",
+    # Common scale hints used across your BOMs
+    for key in (
+            "instances",
+            "vcores",
+            "gateway_units",
+            "capacity_units",
+            "operations_per_month",
+            "requests_per_month",
+            "executions",
+            "egress_gb",
+            "gb",
+            "tb",
+            "tokens_1k",
+            "images",
+            "dwu",
+            "clusters",
+            "nodes",
+            "calls_per_million",
+            "requests_millions",
+            "waf_policies",
+            "waf_rules",
     ):
-        if k in component:
-            val = decimal(component[k])
-            if k in ("requests_millions", "calls_per_million"):
-                return val * decimal(1_000_000)
-            if k == "tb":
-                return val * decimal(1024)  # convert TB → GB
-            return val
+        if key not in component:
+            continue
 
+        value = decimal(component[key])
+
+        # Scale some units up to a neutral base
+        if key in ("requests_millions", "calls_per_million"):
+            return value * decimal(1_000_000)
+        if key == "tb":
+            # Normalise TB to GB
+            return value * decimal(1024)
+
+        return value
+
+    # Default to 1 if nothing else is provided
     return decimal(1)
 
 
 def _apply_assumptions(component: Dict[str, Any], assumptions: Dict[str, Any]) -> None:
+    """
+    Apply common assumptions to a raw component dict (in-place).
+    """
     if "hours_per_month" not in component:
         component["hours_per_month"] = assumptions.get("hours_per_month", 730)
 
 
 def _prepare_component(component: Dict[str, Any], assumptions: Dict[str, Any]) -> Dict[str, Any]:
-    c = dict(component)
-    _apply_assumptions(c, assumptions)
-    if "quantity" not in c:
-        c["quantity"] = _derive_quantity(c)
-    return c
+    """
+    Return a copy of `component` with:
+      - assumptions applied
+      - quantity derived (if missing)
+    """
+    prepared = dict(component)
+    _apply_assumptions(prepared, assumptions)
+    if "quantity" not in prepared:
+        prepared["quantity"] = _derive_quantity(prepared)
+    return prepared
 
 
 def apply_optimisations(total: Decimal, assumptions: dict) -> Decimal:
     """
     Simple Savings Plan / Reserved Instance blending model.
+
+    This gives a rough "with optimisations" view by splitting the total
+    into RI, SP, and PAYG slices based on configured coverage percentages.
     """
-    sp_disc = decimal("0.18")  # assumed SP discount
-    ri_disc = decimal("0.35")  # assumed RI discount
+    sp_disc = decimal("0.18")   # assumed SP discount
+    ri_disc = decimal("0.35")   # assumed RI discount
     sp_cov = decimal(assumptions.get("savings_plan", {}).get("coverage_pct", 0))
     ri_cov = decimal(assumptions.get("ri", {}).get("coverage_pct", 0))
 
     ri_slice   = total * ri_cov * (Decimal(1) - ri_disc)
     sp_slice   = total * (Decimal(1) - ri_cov) * sp_cov * (Decimal(1) - sp_disc)
     payg_slice = total * (Decimal(1) - ri_cov) * (Decimal(1) - sp_cov)
+
     return ri_slice + sp_slice + payg_slice
 
 
-# ---------- Enterprise pricing helpers ----------
+# ---------------------------------------------------------------------------
+# Enterprise pricing helpers
+# ---------------------------------------------------------------------------
 
 def _load_enterprise_prices(
         *,
@@ -115,30 +155,38 @@ def _load_enterprise_prices(
         enterprise_csv: Optional[str],
 ) -> Dict[Key, Decimal]:
     """
-    Try API (MCA/EA) first if configured, otherwise fall back to CSV, else empty.
+    Build the enterprise price map:
+
+      1) If API + token configured (MCA / EA), use that.
+      2) Otherwise, if a local CSV is provided, load from CSV.
+      3) Otherwise, return an empty map (use retail only).
     """
     ent_prices: Dict[Key, Decimal] = {}
     tried_enterprise = False
 
     try:
+        # API (MCA / EA)
         if enterprise_price_sheet_api and aad_token:
             tried_enterprise = True
+
             if enterprise_price_sheet_api == "mca" and billing_account:
                 log.info("Downloading MCA price sheet for billing account %s", billing_account)
                 rows = download_price_sheet_mca(aad_token, billing_account)
                 ent_prices = normalise_enterprise_rows(rows)
+
             elif enterprise_price_sheet_api == "ea" and enrollment_account:
                 log.info("Downloading EA price sheet for enrollment account %s", enrollment_account)
                 rows = download_price_sheet_ea(aad_token, enrollment_account)
                 ent_prices = normalise_enterprise_rows(rows)
 
+        # CSV fallback
         if not ent_prices and enterprise_csv:
             tried_enterprise = True
             log.info("Loading enterprise prices from CSV: %s", enterprise_csv)
             ent_prices = load_enterprise_csv(enterprise_csv)
 
-    except Exception as e:
-        log.warning("Enterprise pricing failed, using retail only. Error: %s", e)
+    except Exception as exc:
+        log.warning("Enterprise pricing failed, using retail only. Error: %s", exc)
 
     if tried_enterprise and not ent_prices:
         log.info("No enterprise prices found (empty). Using retail only.")
@@ -148,7 +196,9 @@ def _load_enterprise_prices(
     return ent_prices
 
 
-# ---------- Handler registry ----------
+# ---------------------------------------------------------------------------
+# Handler registry
+# ---------------------------------------------------------------------------
 
 def _make_handlers(
         *,
@@ -157,7 +207,7 @@ def _make_handlers(
         ent_prices: Dict[Key, Decimal],
 ) -> Dict[str, Callable[[Dict[str, Any]], Tuple[Decimal, str]]]:
     """
-    Build the map of component 'type' -> pricing function bound with region/currency/enterprise.
+    Map component 'type' -> pricing function bound with region / currency / enterprise prices.
     """
     return {
         "open_ai":         lambda c: price_open_ai(c, region, currency, ent_prices),
@@ -192,40 +242,69 @@ def _make_handlers(
     }
 
 
-# ---------- Public entry point ----------
+# ---------------------------------------------------------------------------
+# Public entry point
+# ---------------------------------------------------------------------------
 
 def run_model(
         *,
         bom: dict,
         currency_override: Optional[str],
-        retail_csv: Optional[str],                 # local CSV fallback
-        enterprise_csv: Optional[str],             # local CSV fallback
+        retail_offline: Optional[bool],
+        retail_filter: Optional[str],
+        retail_temp_dir: Optional[str],
+        enterprise_csv: Optional[str],
         enterprise_price_sheet_api: Optional[str], # "mca" | "ea" | None
-        billing_account: Optional[str],            # for MCA
-        enrollment_account: Optional[str],         # for EA
-        aad_token: Optional[str],                  # token (if using enterprise_price_sheet_api); else None
+        billing_account: Optional[str],
+        enrollment_account: Optional[str],
+        aad_token: Optional[str],
 ) -> None:
     """
     Execute the pricing model:
-      1) Optionally prepare a retail CSV cache
-      2) Load enterprise prices (API or CSV)
-      3) Price each workload's components with the correct region
-      4) Apply simple SP/RI optimisation view
-      5) Print summary totals
+
+      1) (Optional) Download Retail Prices JSON pages to a temp folder.
+      2) Load enterprise prices (API or CSV).
+      3) Price each workload's components with the correct region.
+      4) Apply a simple SP/RI optimisation view.
+      5) Print summary totals.
+
+    Retail controls:
+      - retail_offline (arg) or bom["retail_offline"] enables the JSON dump.
+      - retail_filter (arg) or bom["retail_filter"] is passed to the Retail API $filter.
+      - retail_temp_dir (arg) or bom["retail_temp_dir"] controls where JSON pages are stored.
     """
     currency = currency_override or bom.get("currency", "AUD")
     assumptions = bom.get("assumptions", {})
 
-    # Retail CSV cache (optional)
-    if retail_csv:
-        try:
-            ensure_retail_cache(retail_csv, currency=currency)
-            set_default_retail_csv(retail_csv)
-            log.info("Using retail CSV cache: %s", retail_csv)
-        except Exception as e:
-            log.warning("Retail CSV setup failed (%s); falling back to live Retail API.", e)
+    # -----------------------------------------------------------------------
+    # 1) Retail JSON dump (per-page) – optional but enabled if retail_offline set
+    # -----------------------------------------------------------------------
+    # CLI / caller args override BOM; BOM values are fallback.
+    dump_retail = bool(retail_offline) or bool(bom.get("retail_offline", False))
+    if dump_retail:
+        temp_dir = retail_temp_dir or bom.get("retail_temp_dir", "examples/retail")
+        filter_expr = retail_filter if retail_filter is not None else bom.get("retail_filter")
 
-    # Enterprise price map
+        log.info(
+            "Downloading Retail Prices JSON pages to %s (currency=%s, filter=%r)",
+            temp_dir,
+            currency,
+            filter_expr,
+        )
+        try:
+            pages = download_retail_pages(
+                temp_dir=temp_dir,
+                currency=currency,
+                filter_expr=filter_expr,
+                sleep_between_pages=0.03,
+            )
+            log.info("Downloaded %s Retail pages into %s", pages, temp_dir)
+        except Exception as exc:
+            log.warning("Failed to download Retail JSON pages: %s", exc)
+
+    # -----------------------------------------------------------------------
+    # 2) Enterprise price map (may be empty if not configured)
+    # -----------------------------------------------------------------------
     ent_prices = _load_enterprise_prices(
         enterprise_price_sheet_api=enterprise_price_sheet_api,
         billing_account=billing_account,
@@ -234,50 +313,61 @@ def run_model(
         enterprise_csv=enterprise_csv,
     )
 
-    # Header
     print("\n=== Monthly Cost by Workload (Original vs With SP/RI modelling) ===")
     print(f"{'Workload':25} {'Tier':8} {'PAYG est.':>16} {'With Opt.':>16}")
 
     grand_total_opt = Decimal(0)
 
-    # Iterate workloads
+    # -----------------------------------------------------------------------
+    # 3) Iterate workloads and price components
+    # -----------------------------------------------------------------------
     for wl in bom.get("workloads", []):
         wl_name = wl.get("name", "(unnamed)")
-        # Normalise human-readable region → ARM style (e.g., "Australia East" -> "australiaeast")
+        # Normalise human-readable region to ARM style
         wl_region = arm_region(wl.get("region", "Australia East"))
         handlers = _make_handlers(region=wl_region, currency=currency, ent_prices=ent_prices)
 
         wl_total = Decimal(0)
         print(f"\n-- {wl_name} components ({wl_region}) --")
 
-        # Components
         for comp in wl.get("components", []):
             comp_type = comp.get("type", "")
             fn = handlers.get(comp_type)
+
             if fn is None:
                 expected = ", ".join(sorted(handlers.keys()))
-                log.warning("No handler for component type %r. Expected one of: %s", comp_type, expected)
+                log.warning(
+                    "No handler for component type %r. Expected one of: %s",
+                    comp_type,
+                    expected,
+                )
                 continue
 
-            c = _prepare_component(comp, assumptions)
+            prepared = _prepare_component(comp, assumptions)
+
             try:
-                cost, desc = fn(c)
-            except Exception as e:
-                log.warning("Pricing error for %s/%s: %s", wl_name, comp_type, e)
-                cost, desc = Decimal(0), f"Error: {e}"
+                cost, desc = fn(prepared)
+            except Exception as exc:
+                log.warning("Pricing error for %s/%s: %s", wl_name, comp_type, exc)
+                cost, desc = Decimal(0), f"Error: {exc}"
 
             wl_total += cost
             print(f"  • {comp_type:<18} {desc:<70} = ${cost:,.2f}")
 
-        # Optimised view
+        # -------------------------------------------------------------------
+        # 4) Apply optimisation view
+        # -------------------------------------------------------------------
         wl_total_opt = apply_optimisations(wl_total, assumptions)
         grand_total_opt += wl_total_opt
 
         print(
             f"{wl_name:25} {wl.get('tier','-'):8} "
-            f"{('$'+format(wl_total, ',.2f')):>16} {('$'+format(wl_total_opt, ',.2f')):>16}"
+            f"{('$' + format(wl_total, ',.2f')):>16} "
+            f"{('$' + format(wl_total_opt, ',.2f')):>16}"
         )
 
-    # Footer
+    # -----------------------------------------------------------------------
+    # 5) Final summary
+    # -----------------------------------------------------------------------
     print("\n=== Grand Total (Monthly, With Optimisations) ===")
     print(f"${money(grand_total_opt):,.2f} {currency}")

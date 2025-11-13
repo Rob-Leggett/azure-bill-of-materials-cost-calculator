@@ -205,5 +205,8 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Application
 /.idea/
-/examples/retail_prices.sample.csv
+/examples/retail/retail-prices.checkpoint
+/examples/retail/retail-prices.lock

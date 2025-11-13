@@ -29,7 +29,7 @@ src/azure_bom_costing/cli.py — entrypoint for the azure-bom CLI.
 
 ### Run (Retail only) - AVAILABLE
 ```
-azure-bom --bom examples/azure_bom.json --retail-csv examples/retail_prices.sample.csv --currency AUD 
+azure-bom --bom examples/azure_bom.json --retail-offline --currency AUD 
 ```
 
 ### Run with Enterprise API (MCA) - COMING LATER

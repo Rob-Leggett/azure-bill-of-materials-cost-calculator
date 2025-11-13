@@ -39,13 +39,39 @@ def _parse_args() -> argparse.Namespace:
         default="AUD",
         help="3-letter currency code, e.g. AUD, USD (default: AUD)",
     )
+
+    # Retail (JSON) controls
     ap.add_argument(
-        "--retail-csv",
-        help="Path to a retail prices CSV cache (optional, used for offline/fast lookups).",
+        "--retail-offline",
+        action="store_true",
+        help=(
+            "Download Retail Prices API data into per-page JSON files before pricing. "
+            "If omitted, can also be enabled via BOM['retail_offline']."
+        ),
     )
     ap.add_argument(
+        "--retail-filter",
+        help=(
+            "Optional $filter expression for the Retail Prices API when downloading JSON pages, "
+            "e.g. \"serviceName eq 'Virtual Machines'\". "
+            "If omitted, falls back to BOM['retail_filter']."
+        ),
+    )
+    ap.add_argument(
+        "--retail-temp-dir",
+        help=(
+            "Directory to store Retail JSON pages, e.g. examples/temp. "
+            "If omitted, falls back to BOM['retail_temp_dir'] or 'examples/temp'."
+        ),
+    )
+
+    # Enterprise (MCA / EA) options
+    ap.add_argument(
         "--enterprise-csv",
-        help="Path to an Enterprise price sheet CSV (optional, used if API is not set or fails).",
+        help=(
+            "Path to an Enterprise price sheet CSV (optional). "
+            "Used if API is not configured or fails."
+        ),
     )
     ap.add_argument(
         "--enterprise-price-sheet-api",
@@ -64,6 +90,7 @@ def _parse_args() -> argparse.Namespace:
 
 
 def _load_bom(path: Path) -> dict:
+    """Load the BOM JSON from disk, exiting with code 2 on failure."""
     if not path.exists():
         logging.error("BOM file not found: %s", path)
         raise SystemExit(2)
@@ -101,11 +128,19 @@ def _maybe_get_aad_token(api_choice: Optional[str]) -> Optional[str]:
         logging.info("Obtained AAD token for enterprise price sheet API: %s", api_choice.upper())
         return token
     except Exception as e:
-        logging.warning("Failed to obtain AAD token (%s). Falling back to CSV/retail. Error: %s", api_choice, e)
+        logging.warning(
+            "Failed to obtain AAD token (%s). Falling back to CSV/retail. Error: %s",
+            api_choice,
+            e,
+        )
         return None
 
 
-def _validate_enterprise_api_args(api_choice: Optional[str], billing_account: Optional[str], enrollment_account: Optional[str]) -> None:
+def _validate_enterprise_api_args(
+        api_choice: Optional[str],
+        billing_account: Optional[str],
+        enrollment_account: Optional[str],
+) -> None:
     """
     Ensure the right account id is present for the chosen enterprise API type.
     """
@@ -113,10 +148,17 @@ def _validate_enterprise_api_args(api_choice: Optional[str], billing_account: Op
         return
 
     if api_choice == "mca" and not billing_account:
-        logging.error("You specified --enterprise-price-sheet-api mca, but no --billing-account was provided.")
+        logging.error(
+            "You specified --enterprise-price-sheet-api mca, "
+            "but no --billing-account was provided."
+        )
         raise SystemExit(2)
+
     if api_choice == "ea" and not enrollment_account:
-        logging.error("You specified --enterprise-price-sheet-api ea, but no --enrollment-account was provided.")
+        logging.error(
+            "You specified --enterprise-price-sheet-api ea, "
+            "but no --enrollment-account was provided."
+        )
         raise SystemExit(2)
 
 
@@ -140,10 +182,12 @@ def main() -> None:
     run_model(
         bom=bom,
         currency_override=args.currency,
+        retail_offline=args.retail_offline,
+        retail_filter=args.retail_filter,
+        retail_temp_dir=args.retail_temp_dir,
         enterprise_price_sheet_api=args.enterprise_price_sheet_api,
         billing_account=args.billing_account,
         enrollment_account=args.enrollment_account,
-        retail_csv=args.retail_csv,
         enterprise_csv=args.enterprise_csv,
         aad_token=token,
     )
