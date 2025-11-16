@@ -6,6 +6,40 @@
     {
       "currencyCode": "AUD",
       "tierMinimumUnits": 0.0,
+      "retailPrice": 45.235935,
+      "unitPrice": 45.235935,
+      "armRegionName": "centralus",
+      "location": "US Central",
+      "effectiveStartDate": "2025-07-01T00:00:00Z",
+      "meterId": "3a9ff9a8-abde-52d7-8a96-1a49f4a22d9a",
+      "meterName": "Standard_M176ds_4_v3",
+      "productId": "DZH318Z0K7CZ",
+      "skuId": "DZH318Z0K7CZ/019T",
+      "productName": "Virtual Machines Mdsv3 Medium Memory Series Linux",
+      "skuName": "Standard_M176ds_4_v3",
+      "serviceName": "Virtual Machines",
+      "serviceId": "DZH313Z7MMC8",
+      "serviceFamily": "Compute",
+      "unitOfMeasure": "1 Hour",
+      "type": "Consumption",
+      "isPrimaryMeterRegion": true,
+      "armSkuName": "Standard_M176ds_4_v3",
+      "savingsPlan": [
+        {
+          "unitPrice": 13.977904,
+          "retailPrice": 13.977904,
+          "term": "3 Years"
+        },
+        {
+          "unitPrice": 27.59392,
+          "retailPrice": 27.59392,
+          "term": "1 Year"
+        }
+      ]
+    },
+    {
+      "currencyCode": "AUD",
+      "tierMinimumUnits": 0.0,
       "reservationTerm": "1 Year",
       "retailPrice": 203962.492438,
       "unitPrice": 203962.492438,
@@ -3717,6 +3751,7 @@
       "armRegionName": "southwestus",
       "location": "US Southwest",
       "effectiveStartDate": "2025-08-01T00:00:00Z",
+      "effectiveEndDate": "2025-11-30T23:59:00Z",
       "meterId": "3aae88f6-2c76-59c7-a2f8-3048b6117ce3",
       "meterName": "E32-8ads v6 Spot",
       "productId": "DZH318Z0F5DZ",
@@ -15058,6 +15093,7 @@
       "armRegionName": "southcentralus",
       "location": "US South Central",
       "effectiveStartDate": "2025-11-01T00:00:00Z",
+      "effectiveEndDate": "2025-11-30T23:59:00Z",
       "meterId": "3ad8d28c-105f-597d-89e4-1fff467a6edb",
       "meterName": "E48as v4 Spot",
       "productId": "DZH318Z0CM2D",
@@ -22771,28 +22807,6 @@
       "serviceFamily": "Compute",
       "unitOfMeasure": "1 Hour",
       "type": "Consumption",
-      "isPrimaryMeterRegion": true,
-      "armSkuName": "Standard_B8ps_v2"
-    },
-    {
-      "currencyCode": "AUD",
-      "tierMinimumUnits": 0.0,
-      "retailPrice": 0.461434,
-      "unitPrice": 0.461434,
-      "armRegionName": "southeastasia",
-      "location": "AP Southeast",
-      "effectiveStartDate": "2025-09-01T00:00:00Z",
-      "meterId": "3af510c0-a10b-560c-bd1f-d93292eb6595",
-      "meterName": "B8ps v2 Spot",
-      "productId": "DZH318Z0K9JL",
-      "skuId": "DZH318Z0K9JL/00VX",
-      "productName": "Virtual Machines Bpsv2 Series Windows",
-      "skuName": "B8ps v2 Spot",
-      "serviceName": "Virtual Machines",
-      "serviceId": "DZH313Z7MMC8",
-      "serviceFamily": "Compute",
-      "unitOfMeasure": "1 Hour",
-      "type": "DevTestConsumption",
       "isPrimaryMeterRegion": true,
       "armSkuName": "Standard_B8ps_v2"
     }

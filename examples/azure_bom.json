@@ -23,7 +23,7 @@
         {
           "type": "app_service",
           "service": "Azure App Service",
-          "sku": "P1v3",
+          "sku": "P1v4",
           "instances": 3,
           "hours_per_month": 730,
           "purpose": "Client & Partner Portals"
@@ -31,7 +31,7 @@
         {
           "type": "functions",
           "service": "Functions",
-          "sku": "Consumption",
+          "sku": "On Demand",
           "executions": 0,
           "hours_per_month": 1,
           "purpose": "API & event-driven logic"
@@ -87,7 +87,7 @@
         },
         {
           "type": "front_door",
-          "service": "Azure Front Door",
+          "service": "Azure Front Door Service",
           "sku": "Standard+WAF",
           "requests_millions": 0,
           "egress_gb": 0,
@@ -129,7 +129,7 @@
         {
           "type": "fabric",
           "service": "Microsoft Fabric",
-          "sku": "F64",
+          "sku": "SQL database in Microsoft Fabric Capacity Usage",
           "capacity_units": 64,
           "hours_per_month": 730,
           "purpose": "Data Lakehouse + Power BI capacity"
@@ -264,7 +264,7 @@
         {
           "type": "app_service",
           "service": "Azure App Service",
-          "sku": "P1v3",
+          "sku": "P1v4",
           "instances": 0,
           "hours_per_month": 730,
           "purpose": "Regional capacity (Melbourne) — set if active/active"

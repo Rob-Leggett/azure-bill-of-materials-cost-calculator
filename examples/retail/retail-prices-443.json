@@ -6,6 +6,40 @@
     {
       "currencyCode": "AUD",
       "tierMinimumUnits": 0.0,
+      "retailPrice": 4.326981,
+      "unitPrice": 4.326981,
+      "armRegionName": "uaenorth",
+      "location": "AE North",
+      "effectiveStartDate": "2025-09-01T00:00:00Z",
+      "meterId": "8a65868a-48e2-5fa3-b742-6b059d04a647",
+      "meterName": "P4mv4",
+      "productId": "DZH318Z0TD7T",
+      "skuId": "DZH318Z0TD7T/00QM",
+      "productName": "Azure App Service Premium v4 Plan",
+      "skuName": "P4mv4",
+      "serviceName": "Azure App Service",
+      "serviceId": "DZH317GT8G5N",
+      "serviceFamily": "Compute",
+      "unitOfMeasure": "1 Hour",
+      "type": "Consumption",
+      "isPrimaryMeterRegion": true,
+      "armSkuName": "Azure_App_Service_Premium_v4_Plan_P4mv4",
+      "savingsPlan": [
+        {
+          "unitPrice": 2.725998,
+          "retailPrice": 2.725998,
+          "term": "3 Years"
+        },
+        {
+          "unitPrice": 3.375045,
+          "retailPrice": 3.375045,
+          "term": "1 Year"
+        }
+      ]
+    },
+    {
+      "currencyCode": "AUD",
+      "tierMinimumUnits": 0.0,
       "retailPrice": 0.0,
       "unitPrice": 0.0,
       "armRegionName": "uaenorth",
@@ -2550,6 +2584,7 @@
       "armRegionName": "northeurope",
       "location": "EU North",
       "effectiveStartDate": "2025-11-01T00:00:00Z",
+      "effectiveEndDate": "2025-11-30T23:59:00Z",
       "meterId": "8a6e1228-0eba-5049-868f-886f1d972cee",
       "meterName": "E48as v5 Spot",
       "productId": "DZH318Z093XK",
@@ -2572,6 +2607,7 @@
       "armRegionName": "northeurope",
       "location": "EU North",
       "effectiveStartDate": "2025-11-01T00:00:00Z",
+      "effectiveEndDate": "2025-11-30T23:59:00Z",
       "meterId": "8a6e1228-0eba-5049-868f-886f1d972cee",
       "meterName": "E48as v5 Spot",
       "productId": "DZH318Z093XK",
@@ -23192,28 +23228,6 @@
       "type": "DevTestConsumption",
       "isPrimaryMeterRegion": true,
       "armSkuName": "Standard_F1"
-    },
-    {
-      "currencyCode": "AUD",
-      "tierMinimumUnits": 0.0,
-      "retailPrice": 32.909861,
-      "unitPrice": 32.909861,
-      "armRegionName": "eastasia",
-      "location": "AP East",
-      "effectiveStartDate": "2017-10-01T00:00:00Z",
-      "meterId": "8ab6ac04-6b25-4350-acf0-503c7f0f9e91",
-      "meterName": "S20 LRS Disk",
-      "productId": "DZH318Z0BP0L",
-      "skuId": "DZH318Z0BP0L/007Q",
-      "productName": "Standard HDD Managed Disks",
-      "skuName": "S20 LRS",
-      "serviceName": "Storage",
-      "serviceId": "DZH317F1HKN0",
-      "serviceFamily": "Storage",
-      "unitOfMeasure": "1/Month",
-      "type": "Consumption",
-      "isPrimaryMeterRegion": true,
-      "armSkuName": ""
     }
   ],
   "NextPageLink": "https://prices.azure.com:443/api/retail/prices?api-version=2023-01-01-preview&currencyCode=AUD&$skip=443000",

@@ -6,6 +6,40 @@
     {
       "currencyCode": "AUD",
       "tierMinimumUnits": 0.0,
+      "retailPrice": 1.208409,
+      "unitPrice": 1.208409,
+      "armRegionName": "westcentralus",
+      "location": "US West Central",
+      "effectiveStartDate": "2023-09-01T00:00:00Z",
+      "meterId": "7fb4f91a-f118-5f43-8fe0-77d9073eb439",
+      "meterName": "B16s v2",
+      "productId": "DZH318Z0K9K9",
+      "skuId": "DZH318Z0K9K9/00FX",
+      "productName": "Virtual Machines Bsv2 Series",
+      "skuName": "B16s v2",
+      "serviceName": "Virtual Machines",
+      "serviceId": "DZH313Z7MMC8",
+      "serviceFamily": "Compute",
+      "unitOfMeasure": "1 Hour",
+      "type": "Consumption",
+      "isPrimaryMeterRegion": true,
+      "armSkuName": "Standard_B16s_v2",
+      "savingsPlan": [
+        {
+          "unitPrice": 0.567952,
+          "retailPrice": 0.567952,
+          "term": "3 Years"
+        },
+        {
+          "unitPrice": 0.833802,
+          "retailPrice": 0.833802,
+          "term": "1 Year"
+        }
+      ]
+    },
+    {
+      "currencyCode": "AUD",
+      "tierMinimumUnits": 0.0,
       "reservationTerm": "1 Year",
       "retailPrice": 6243.194192,
       "unitPrice": 6243.194192,
@@ -23058,40 +23092,6 @@
       "type": "Consumption",
       "isPrimaryMeterRegion": false,
       "armSkuName": ""
-    },
-    {
-      "currencyCode": "AUD",
-      "tierMinimumUnits": 0.0,
-      "retailPrice": 2.155172,
-      "unitPrice": 2.155172,
-      "armRegionName": "germanynorth",
-      "location": "DE North",
-      "effectiveStartDate": "2022-11-01T00:00:00Z",
-      "meterId": "8001be5b-008e-5bc5-87a2-14fbc9ae6517",
-      "meterName": "E16-8as v5",
-      "productId": "DZH318Z093WZ",
-      "skuId": "DZH318Z093WZ/05R9",
-      "productName": "Virtual Machines Easv5 Series",
-      "skuName": "E16-8as v5",
-      "serviceName": "Virtual Machines",
-      "serviceId": "DZH313Z7MMC8",
-      "serviceFamily": "Compute",
-      "unitOfMeasure": "1 Hour",
-      "type": "Consumption",
-      "isPrimaryMeterRegion": true,
-      "armSkuName": "Standard_E16-8as_v5",
-      "savingsPlan": [
-        {
-          "unitPrice": 1.114224,
-          "retailPrice": 1.114224,
-          "term": "3 Years"
-        },
-        {
-          "unitPrice": 1.46444,
-          "retailPrice": 1.46444,
-          "term": "1 Year"
-        }
-      ]
     }
   ],
   "NextPageLink": "https://prices.azure.com:443/api/retail/prices?api-version=2023-01-01-preview&currencyCode=AUD&$skip=409000",

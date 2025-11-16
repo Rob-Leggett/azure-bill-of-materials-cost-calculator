@@ -4699,6 +4699,7 @@
       "armRegionName": "uksouth",
       "location": "UK South",
       "effectiveStartDate": "2025-11-01T00:00:00Z",
+      "effectiveEndDate": "2025-11-30T23:59:00Z",
       "meterId": "0507ae99-09f0-52bd-93f6-cac34e8a4413",
       "meterName": "NC64asT4 v3 Spot",
       "productId": "DZH318Z0DF49",

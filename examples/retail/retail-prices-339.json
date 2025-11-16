@@ -6,6 +6,40 @@
     {
       "currencyCode": "AUD",
       "tierMinimumUnits": 0.0,
+      "retailPrice": 28.859649,
+      "unitPrice": 28.859649,
+      "armRegionName": "norwayeast",
+      "location": "NO East",
+      "effectiveStartDate": "2020-12-01T00:00:00Z",
+      "meterId": "69d3e1e4-5cc7-507d-8b31-37fb60a1b553",
+      "meterName": "M64ms",
+      "productId": "DZH318Z0BQ4W",
+      "skuId": "DZH318Z0BQ4W/05T9",
+      "productName": "Virtual Machines MS Series",
+      "skuName": "M64ms",
+      "serviceName": "Virtual Machines",
+      "serviceId": "DZH313Z7MMC8",
+      "serviceFamily": "Compute",
+      "unitOfMeasure": "1 Hour",
+      "type": "Consumption",
+      "isPrimaryMeterRegion": true,
+      "armSkuName": "Standard_M64ms",
+      "savingsPlan": [
+        {
+          "unitPrice": 10.097991,
+          "retailPrice": 10.097991,
+          "term": "3 Years"
+        },
+        {
+          "unitPrice": 19.910272,
+          "retailPrice": 19.910272,
+          "term": "1 Year"
+        }
+      ]
+    },
+    {
+      "currencyCode": "AUD",
+      "tierMinimumUnits": 0.0,
       "reservationTerm": "1 Year",
       "retailPrice": 145382.637629,
       "unitPrice": 145382.637629,
@@ -12206,6 +12240,7 @@
       "armRegionName": "canadacentral",
       "location": "CA Central",
       "effectiveStartDate": "2025-11-01T00:00:00Z",
+      "effectiveEndDate": "2025-11-30T23:59:00Z",
       "meterId": "69ffad8d-7f43-56f4-9bfa-76571c254e71",
       "meterName": "E8-4ads v7 Spot",
       "productId": "DZH318Z0TBL1",
@@ -12228,6 +12263,7 @@
       "armRegionName": "canadacentral",
       "location": "CA Central",
       "effectiveStartDate": "2025-11-01T00:00:00Z",
+      "effectiveEndDate": "2025-11-30T23:59:00Z",
       "meterId": "69ffad8d-7f43-56f4-9bfa-76571c254e71",
       "meterName": "E8-4ads v7 Spot",
       "productId": "DZH318Z0TBL1",
@@ -22967,28 +23003,6 @@
       "type": "Reservation",
       "isPrimaryMeterRegion": true,
       "armSkuName": "Standard_DC48as_v5"
-    },
-    {
-      "currencyCode": "AUD",
-      "tierMinimumUnits": 0.0,
-      "retailPrice": 6.46098,
-      "unitPrice": 6.46098,
-      "armRegionName": "eastasia",
-      "location": "AP East",
-      "effectiveStartDate": "2021-11-01T00:00:00Z",
-      "meterId": "6a24d75b-c6fb-5a1c-a67b-da7425e1c785",
-      "meterName": "E32-8ds v4",
-      "productId": "DZH318Z0CSHB",
-      "skuId": "DZH318Z0CSHB/019M",
-      "productName": "Virtual Machines Edsv4 Series Windows",
-      "skuName": "E32-8ds v4",
-      "serviceName": "Virtual Machines",
-      "serviceId": "DZH313Z7MMC8",
-      "serviceFamily": "Compute",
-      "unitOfMeasure": "1 Hour",
-      "type": "Consumption",
-      "isPrimaryMeterRegion": true,
-      "armSkuName": "Standard_E32-8ds_v4"
     }
   ],
   "NextPageLink": "https://prices.azure.com:443/api/retail/prices?api-version=2023-01-01-preview&currencyCode=AUD&$skip=339000",

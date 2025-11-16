@@ -6,6 +6,40 @@
     {
       "currencyCode": "AUD",
       "tierMinimumUnits": 0.0,
+      "retailPrice": 7.11585,
+      "unitPrice": 7.11585,
+      "armRegionName": "canadacentral",
+      "location": "CA Central",
+      "effectiveStartDate": "2023-09-01T00:00:00Z",
+      "meterId": "4a0a253d-bf2b-5cc3-8057-396721cb009f",
+      "meterName": "Esv3 Type3",
+      "productId": "DZH318Z0C620",
+      "skuId": "DZH318Z0C620/00LB",
+      "productName": "ESv3 Series Dedicated Host",
+      "skuName": "Esv3 Type3",
+      "serviceName": "Virtual Machines",
+      "serviceId": "DZH313Z7MMC8",
+      "serviceFamily": "Compute",
+      "unitOfMeasure": "1 Hour",
+      "type": "Consumption",
+      "isPrimaryMeterRegion": true,
+      "armSkuName": "Esv3_Type3",
+      "savingsPlan": [
+        {
+          "unitPrice": 3.913717,
+          "retailPrice": 3.913717,
+          "term": "3 Years"
+        },
+        {
+          "unitPrice": 5.408046,
+          "retailPrice": 5.408046,
+          "term": "1 Year"
+        }
+      ]
+    },
+    {
+      "currencyCode": "AUD",
+      "tierMinimumUnits": 0.0,
       "reservationTerm": "1 Year",
       "retailPrice": 36716.575923,
       "unitPrice": 36716.575923,
@@ -1023,6 +1057,7 @@
       "armRegionName": "uksouth",
       "location": "UK South",
       "effectiveStartDate": "2025-11-01T00:00:00Z",
+      "effectiveEndDate": "2025-11-30T23:59:00Z",
       "meterId": "4a0d81c5-e2ce-5fd2-952b-b33df5ab5b4d",
       "meterName": "E16-8ads v7 Spot",
       "productId": "DZH318Z0TBL1",
@@ -1045,6 +1080,7 @@
       "armRegionName": "uksouth",
       "location": "UK South",
       "effectiveStartDate": "2025-11-01T00:00:00Z",
+      "effectiveEndDate": "2025-11-30T23:59:00Z",
       "meterId": "4a0d81c5-e2ce-5fd2-952b-b33df5ab5b4d",
       "meterName": "E16-8ads v7 Spot",
       "productId": "DZH318Z0TBL1",
@@ -1243,6 +1279,7 @@
       "armRegionName": "southcentralus",
       "location": "US South Central",
       "effectiveStartDate": "2025-11-01T00:00:00Z",
+      "effectiveEndDate": "2025-11-30T23:59:00Z",
       "meterId": "4a0e6740-3f2e-5163-8874-e2bc6a861e85",
       "meterName": "E16-4as v5 Spot",
       "productId": "DZH318Z093WZ",
@@ -22976,28 +23013,6 @@
       "type": "Consumption",
       "isPrimaryMeterRegion": true,
       "armSkuName": "Standard_E8-2as_v6"
-    },
-    {
-      "currencyCode": "AUD",
-      "tierMinimumUnits": 0.0,
-      "retailPrice": 0.317604,
-      "unitPrice": 0.317604,
-      "armRegionName": "italynorth",
-      "location": "IT North",
-      "effectiveStartDate": "2025-05-01T00:00:00Z",
-      "meterId": "4a5430af-0c6e-533e-83a5-fb6f5fa14b0f",
-      "meterName": "ML Model Endpoint Capacity Usage CU",
-      "productId": "DZH318Z0KCZ7",
-      "skuId": "DZH318Z0KCZ7/17TK",
-      "productName": "Fabric Capacity",
-      "skuName": "ML Model Endpoint Capacity Usage",
-      "serviceName": "Microsoft Fabric",
-      "serviceId": "DZH31767PK6Z",
-      "serviceFamily": "Data",
-      "unitOfMeasure": "1 Hour",
-      "type": "Consumption",
-      "isPrimaryMeterRegion": true,
-      "armSkuName": "ML Model Endpoint"
     }
   ],
   "NextPageLink": "https://prices.azure.com:443/api/retail/prices?api-version=2023-01-01-preview&currencyCode=AUD&$skip=238000",

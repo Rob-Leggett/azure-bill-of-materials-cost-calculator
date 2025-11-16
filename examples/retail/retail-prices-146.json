@@ -6,6 +6,40 @@
     {
       "currencyCode": "AUD",
       "tierMinimumUnits": 0.0,
+      "retailPrice": 0.022232,
+      "unitPrice": 0.022232,
+      "armRegionName": "uaecentral",
+      "location": "AE Central",
+      "effectiveStartDate": "2023-09-01T00:00:00Z",
+      "meterId": "2d42c0ae-1bc6-523b-b231-3459732cc2fa",
+      "meterName": "B2ats v2",
+      "productId": "DZH318Z0K9JH",
+      "skuId": "DZH318Z0K9JH/014N",
+      "productName": "Virtual Machines Basv2 Series",
+      "skuName": "B2ats v2",
+      "serviceName": "Virtual Machines",
+      "serviceId": "DZH313Z7MMC8",
+      "serviceFamily": "Compute",
+      "unitOfMeasure": "1 Hour",
+      "type": "Consumption",
+      "isPrimaryMeterRegion": true,
+      "armSkuName": "Standard_B2ats_v2",
+      "savingsPlan": [
+        {
+          "unitPrice": 0.012228,
+          "retailPrice": 0.012228,
+          "term": "3 Years"
+        },
+        {
+          "unitPrice": 0.016897,
+          "retailPrice": 0.016897,
+          "term": "1 Year"
+        }
+      ]
+    },
+    {
+      "currencyCode": "AUD",
+      "tierMinimumUnits": 0.0,
       "reservationTerm": "1 Year",
       "retailPrice": 114.942529,
       "unitPrice": 114.942529,
@@ -6461,6 +6495,7 @@
       "armRegionName": "brazilsouth",
       "location": "BR South",
       "effectiveStartDate": "2025-11-01T00:00:00Z",
+      "effectiveEndDate": "2025-11-30T23:59:00Z",
       "meterId": "2d59498b-c3ef-59a8-aeb2-97c60c220219",
       "meterName": "E16-8as v7 Spot",
       "productId": "DZH318Z0TBJH",
@@ -6483,6 +6518,7 @@
       "armRegionName": "brazilsouth",
       "location": "BR South",
       "effectiveStartDate": "2025-11-01T00:00:00Z",
+      "effectiveEndDate": "2025-11-30T23:59:00Z",
       "meterId": "2d59498b-c3ef-59a8-aeb2-97c60c220219",
       "meterName": "E16-8as v7 Spot",
       "productId": "DZH318Z0TBJH",
@@ -22984,28 +23020,6 @@
       "type": "Consumption",
       "isPrimaryMeterRegion": false,
       "armSkuName": ""
-    },
-    {
-      "currencyCode": "AUD",
-      "tierMinimumUnits": 0.0,
-      "retailPrice": 0.307925,
-      "unitPrice": 0.307925,
-      "armRegionName": "swedensouth",
-      "location": "SE South",
-      "effectiveStartDate": "2025-05-01T00:00:00Z",
-      "meterId": "2d901d46-60a3-5707-9076-84e504a1702c",
-      "meterName": "1 vCore",
-      "productId": "DZH318Z0TLQD",
-      "skuId": "DZH318Z0TLQD/0039",
-      "productName": "Azure Database for PostgreSQL Flexible Server Confidential Compute ECadsv6 Series Compute",
-      "skuName": "1 vCore",
-      "serviceName": "Azure Database for PostgreSQL",
-      "serviceId": "DZH3199QPQTD",
-      "serviceFamily": "Databases",
-      "unitOfMeasure": "1 Hour",
-      "type": "Consumption",
-      "isPrimaryMeterRegion": true,
-      "armSkuName": "AzureDB_PostgreSQL_Flexible_Server_Confidential_Compute_ECadsv6_Series_Compute"
     }
   ],
   "NextPageLink": "https://prices.azure.com:443/api/retail/prices?api-version=2023-01-01-preview&currencyCode=AUD&$skip=146000",

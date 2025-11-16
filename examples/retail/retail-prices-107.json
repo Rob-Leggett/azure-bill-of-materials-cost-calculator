@@ -6,6 +6,28 @@
     {
       "currencyCode": "AUD",
       "tierMinimumUnits": 0.0,
+      "retailPrice": 0.207184,
+      "unitPrice": 0.207184,
+      "armRegionName": "uaenorth",
+      "location": "AE North",
+      "effectiveStartDate": "2024-03-01T00:00:00Z",
+      "meterId": "2114a386-09bf-5674-b769-2824056a9124",
+      "meterName": "Standard v2 Workspace Pack",
+      "productId": "DZH318Z0BQCM",
+      "skuId": "DZH318Z0BQCM/00S2",
+      "productName": "API Management",
+      "skuName": "Standard v2",
+      "serviceName": "API Management",
+      "serviceId": "DZH318FZ20SD",
+      "serviceFamily": "Developer Tools",
+      "unitOfMeasure": "1/Hour",
+      "type": "Consumption",
+      "isPrimaryMeterRegion": true,
+      "armSkuName": "Standard v2"
+    },
+    {
+      "currencyCode": "AUD",
+      "tierMinimumUnits": 0.0,
       "retailPrice": 1.984271,
       "unitPrice": 1.984271,
       "armRegionName": "northcentralus",
@@ -4393,6 +4415,7 @@
       "armRegionName": "usgovvirginia",
       "location": "US Gov Virginia",
       "effectiveStartDate": "2025-11-01T00:00:00Z",
+      "effectiveEndDate": "2025-11-30T23:59:00Z",
       "meterId": "21243583-cb52-57d9-9c5c-b48d19938f81",
       "meterName": "E2as v7 Spot",
       "productId": "DZH318Z0TBJH",
@@ -16068,6 +16091,7 @@
       "armRegionName": "centralus",
       "location": "US Central",
       "effectiveStartDate": "2025-11-01T00:00:00Z",
+      "effectiveEndDate": "2025-11-30T23:59:00Z",
       "meterId": "214cc0d0-0dfb-5b6e-b3fd-7c80a6f4a279",
       "meterName": "E32as v4 Spot",
       "productId": "DZH318Z0CM2D",
@@ -23123,40 +23147,6 @@
       "type": "Reservation",
       "isPrimaryMeterRegion": true,
       "armSkuName": "Standard_D16d_v4"
-    },
-    {
-      "currencyCode": "AUD",
-      "tierMinimumUnits": 0.0,
-      "retailPrice": 0.234422,
-      "unitPrice": 0.234422,
-      "armRegionName": "uaenorth",
-      "location": "AE North",
-      "effectiveStartDate": "2021-11-01T00:00:00Z",
-      "meterId": "216690fb-ed5a-5180-8a99-22ef4c85fd02",
-      "meterName": "E2s v4",
-      "productId": "DZH318Z0CSHL",
-      "skuId": "DZH318Z0CSHL/03XP",
-      "productName": "Virtual Machines Esv4 Series",
-      "skuName": "E2s v4",
-      "serviceName": "Virtual Machines",
-      "serviceId": "DZH313Z7MMC8",
-      "serviceFamily": "Compute",
-      "unitOfMeasure": "1 Hour",
-      "type": "Consumption",
-      "isPrimaryMeterRegion": true,
-      "armSkuName": "Standard_E2s_v4",
-      "savingsPlan": [
-        {
-          "unitPrice": 0.110999,
-          "retailPrice": 0.110999,
-          "term": "3 Years"
-        },
-        {
-          "unitPrice": 0.15854,
-          "retailPrice": 0.15854,
-          "term": "1 Year"
-        }
-      ]
     }
   ],
   "NextPageLink": "https://prices.azure.com:443/api/retail/prices?api-version=2023-01-01-preview&currencyCode=AUD&$skip=107000",

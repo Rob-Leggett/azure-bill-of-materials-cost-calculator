@@ -6,6 +6,40 @@
     {
       "currencyCode": "AUD",
       "tierMinimumUnits": 0.0,
+      "retailPrice": 0.81216,
+      "unitPrice": 0.81216,
+      "armRegionName": "jioindiawest",
+      "location": "IN West Jio",
+      "effectiveStartDate": "2022-11-01T00:00:00Z",
+      "meterId": "1c18c308-a88d-5069-8aea-1565e5043c8a",
+      "meterName": "D16ads v5",
+      "productId": "DZH318Z08W2R",
+      "skuId": "DZH318Z08W2R/01S7",
+      "productName": "Virtual Machines Dadsv5 Series",
+      "skuName": "Standard_D16ads_v5",
+      "serviceName": "Virtual Machines",
+      "serviceId": "DZH313Z7MMC8",
+      "serviceFamily": "Compute",
+      "unitOfMeasure": "1 Hour",
+      "type": "Consumption",
+      "isPrimaryMeterRegion": true,
+      "armSkuName": "Standard_D16ads_v5",
+      "savingsPlan": [
+        {
+          "unitPrice": 0.81216,
+          "retailPrice": 0.81216,
+          "term": "3 Years"
+        },
+        {
+          "unitPrice": 0.81216,
+          "retailPrice": 0.81216,
+          "term": "1 Year"
+        }
+      ]
+    },
+    {
+      "currencyCode": "AUD",
+      "tierMinimumUnits": 0.0,
       "retailPrice": 6.339988,
       "unitPrice": 6.339988,
       "armRegionName": "westus3",
@@ -16680,6 +16714,7 @@
       "armRegionName": "southwestus",
       "location": "US Southwest",
       "effectiveStartDate": "2025-08-01T00:00:00Z",
+      "effectiveEndDate": "2025-11-30T23:59:00Z",
       "meterId": "1c52b6cb-a20d-561a-9972-d94fb55bc9b5",
       "meterName": "E96-48ads v6 Spot",
       "productId": "DZH318Z0F5DZ",
@@ -23090,29 +23125,6 @@
           "term": "1 Year"
         }
       ]
-    },
-    {
-      "currencyCode": "AUD",
-      "tierMinimumUnits": 0.0,
-      "reservationTerm": "1 Year",
-      "retailPrice": 8413.490623,
-      "unitPrice": 8413.490623,
-      "armRegionName": "francecentral",
-      "location": "FR Central",
-      "effectiveStartDate": "2025-11-01T00:00:00Z",
-      "meterId": "1c6860ae-9361-545a-a73e-00ae9f0b75fd",
-      "meterName": "F8amds v7",
-      "productId": "DZH318Z0TBKW",
-      "skuId": "DZH318Z0TBKW/06BQ",
-      "productName": "Virtual Machines Famdsv7 Series",
-      "skuName": "F8amds v7",
-      "serviceName": "Virtual Machines",
-      "serviceId": "DZH313Z7MMC8",
-      "serviceFamily": "Compute",
-      "unitOfMeasure": "1 Hour",
-      "type": "Reservation",
-      "isPrimaryMeterRegion": true,
-      "armSkuName": "Standard_F8amds_v7"
     }
   ],
   "NextPageLink": "https://prices.azure.com:443/api/retail/prices?api-version=2023-01-01-preview&currencyCode=AUD&$skip=91000",
