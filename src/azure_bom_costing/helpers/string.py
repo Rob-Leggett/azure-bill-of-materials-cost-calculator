@@ -1,7 +1,6 @@
-from typing import Optional
 
 
-def stripped(val: Optional[str], default: Optional[str] = None) -> Optional[str]:
+def stripped(val: str | None, default: str | None = None) -> str | None:
     """
     Return val as a trimmed string; if val is None, use default; if the result
     is empty after trimming, return None.

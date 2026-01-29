@@ -2,8 +2,14 @@ import requests
 
 MGMT_SCOPE = "https://management.azure.com/.default"
 
-# ---------- AAD token for Enterprise API ----------
-def get_aad_token(tenant_id: str, client_id: str, client_secret: str, scope: str = MGMT_SCOPE) -> str:
+
+def get_aad_token(
+    tenant_id: str,
+    client_id: str,
+    client_secret: str,
+    scope: str = MGMT_SCOPE,
+) -> str:
+    """Get AAD token for Enterprise API."""
     token_url = f"https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token"
     data = {
         "client_id": client_id,

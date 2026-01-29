@@ -5,11 +5,9 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import Optional
 
 from .helpers.auth import get_aad_token
 from .price_model import run_model
-
 
 # ---------- Logging ----------
 
@@ -39,6 +37,15 @@ def _parse_args() -> argparse.Namespace:
         default="AUD",
         help="3-letter currency code, e.g. AUD, USD (default: AUD)",
     )
+    ap.add_argument(
+        "--pricing-tier",
+        choices=["standard", "enterprise"],
+        default="standard",
+        help=(
+            "Pricing tier: 'standard' uses public Retail Prices API, "
+            "'enterprise' uses MCA/EA price sheets. (default: standard)"
+        ),
+    )
 
     # Retail (JSON) controls
     ap.add_argument(
@@ -60,8 +67,8 @@ def _parse_args() -> argparse.Namespace:
     ap.add_argument(
         "--retail-temp-dir",
         help=(
-            "Directory to store Retail JSON pages, e.g. examples/temp. "
-            "If omitted, falls back to BOM['retail_temp_dir'] or 'examples/temp'."
+            "Directory to store Retail JSON pages, e.g. examples/retail. "
+            "If omitted, falls back to BOM['retail_temp_dir'] or 'examples/retail'."
         ),
     )
 
@@ -99,10 +106,10 @@ def _load_bom(path: Path) -> dict:
             return json.load(f)
     except Exception as e:
         logging.error("Failed to read BOM JSON (%s): %s", path, e)
-        raise SystemExit(2)
+        raise SystemExit(2) from e
 
 
-def _maybe_get_aad_token(api_choice: Optional[str]) -> Optional[str]:
+def _maybe_get_aad_token(api_choice: str | None) -> str | None:
     """
     Retrieve an AAD token if the enterprise price sheet API is requested and
     the standard env vars are present. Logs helpful messages if anything is missing.
@@ -137,9 +144,9 @@ def _maybe_get_aad_token(api_choice: Optional[str]) -> Optional[str]:
 
 
 def _validate_enterprise_api_args(
-        api_choice: Optional[str],
-        billing_account: Optional[str],
-        enrollment_account: Optional[str],
+        api_choice: str | None,
+        billing_account: str | None,
+        enrollment_account: str | None,
 ) -> None:
     """
     Ensure the right account id is present for the chosen enterprise API type.
@@ -163,6 +170,7 @@ def _validate_enterprise_api_args(
 
 
 def main() -> None:
+    enable_logging()
     args = _parse_args()
 
     bom_path = Path(args.bom).expanduser().resolve()
@@ -182,6 +190,7 @@ def main() -> None:
     run_model(
         bom=bom,
         currency_override=args.currency,
+        pricing_tier=args.pricing_tier,
         retail_offline=args.retail_offline,
         retail_filter=args.retail_filter,
         retail_temp_dir=args.retail_temp_dir,
@@ -194,5 +203,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    enable_logging()
     main()

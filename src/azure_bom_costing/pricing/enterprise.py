@@ -1,17 +1,16 @@
 from __future__ import annotations
-from decimal import Decimal
-from typing import List, Dict, Any, Optional, Tuple
 
 import csv
 import gzip
 import io
 import zipfile
+from decimal import Decimal
+from typing import Any
 
 from ..helpers.csv import clean_rows
-from ..helpers.http import http_get_json, http_get
+from ..helpers.http import http_get, http_get_json
 from ..helpers.math import decimal
 from ..types import Key
-
 
 # =============================================================================
 # Encoding / CSV parsing
@@ -30,7 +29,7 @@ def _decode_bytes(data: bytes) -> str:
     return data.decode("utf-8", errors="replace")
 
 
-def _csv_rows_from_bytes(data: bytes) -> List[Dict[str, Any]]:
+def _csv_rows_from_bytes(data: bytes) -> list[dict[str, Any]]:
     """
     Convert CSV bytes -> list of dict rows.
     Uses newline='' so Python's csv can handle dialects properly.
@@ -43,7 +42,7 @@ def _csv_rows_from_bytes(data: bytes) -> List[Dict[str, Any]]:
 # HTTP response unpacking (gzip/zip) and polymorphic parsing (CSV/JSON)
 # =============================================================================
 
-def _unpack_response_bytes(resp) -> Tuple[bytes, str]:
+def _unpack_response_bytes(resp) -> tuple[bytes, str]:
     """
     Return (raw_bytes, effective_content_type) from an HTTP response.
     - Transparently gunzips if Content-Encoding: gzip
@@ -75,7 +74,7 @@ def _unpack_response_bytes(resp) -> Tuple[bytes, str]:
     return raw, content_type
 
 
-def _fetch_pricesheet_rows_or_json(download_url: str) -> List[Dict[str, Any]] | dict:
+def _fetch_pricesheet_rows_or_json(download_url: str) -> list[dict[str, Any]] | dict:
     """
     Fetch the price sheet from a SAS URL and return either:
       - list[dict] (CSV normalized to rows), or
@@ -103,7 +102,9 @@ def _fetch_pricesheet_rows_or_json(download_url: str) -> List[Dict[str, Any]] | 
 # Azure Enterprise/MCA price sheet downloads
 # =============================================================================
 
-def _download_enterprise_prices(access_token: str, url: str, err_msg: str) -> List[Dict[str, Any]] | dict:
+def _download_enterprise_prices(
+    access_token: str, url: str, err_msg: str
+) -> list[dict[str, Any]] | dict:
     """
     Common flow:
       1) Call the CostManagement 'download' endpoint to get a short-lived SAS URL
@@ -118,10 +119,10 @@ def _download_enterprise_prices(access_token: str, url: str, err_msg: str) -> Li
     return _fetch_pricesheet_rows_or_json(download_url)
 
 
-def download_price_sheet_mca(access_token: str, billing_account_id: str) -> List[Dict[str, Any]] | dict:
-    """
-    Download the MCA price sheet rows (or JSON passthrough if tenant returns non-tabular data).
-    """
+def download_price_sheet_mca(
+    access_token: str, billing_account_id: str
+) -> list[dict[str, Any]] | dict:
+    """Download MCA price sheet rows."""
     url = (
         "https://management.azure.com/providers/Microsoft.Billing/"
         f"billingAccounts/{billing_account_id}/providers/Microsoft.CostManagement/"
@@ -134,10 +135,10 @@ def download_price_sheet_mca(access_token: str, billing_account_id: str) -> List
     )
 
 
-def download_price_sheet_ea(access_token: str, enrollment_account_id: str) -> List[Dict[str, Any]] | dict:
-    """
-    Download the EA price sheet rows (or JSON passthrough if tenant returns non-tabular data).
-    """
+def download_price_sheet_ea(
+    access_token: str, enrollment_account_id: str
+) -> list[dict[str, Any]] | dict:
+    """Download EA price sheet rows."""
     url = (
         "https://management.azure.com/providers/Microsoft.Billing/"
         f"enrollmentAccounts/{enrollment_account_id}/providers/Microsoft.CostManagement/"
@@ -154,7 +155,10 @@ def download_price_sheet_ea(access_token: str, enrollment_account_id: str) -> Li
 # Enterprise pricing: normalize + lookups
 # =============================================================================
 
-def enterprise_lookup(ent: Dict[Key, Decimal], service: str, sku: str, region: str, uom: str) -> Optional[Decimal]:
+
+def enterprise_lookup(
+    ent: dict[Key, Decimal], service: str, sku: str, region: str, uom: str
+) -> Decimal | None:
     """
     Lookup (service, sku, region, uom) in the enterprise price map.
     Falls back to regionless key if region is missing in sheet.
@@ -168,7 +172,7 @@ def enterprise_lookup(ent: Dict[Key, Decimal], service: str, sku: str, region: s
     return ent.get(without_region)
 
 
-def load_enterprise_csv(path: str) -> Dict[Key, Decimal]:
+def load_enterprise_csv(path: str) -> dict[Key, Decimal]:
     """
     Load a locally-saved enterprise CSV (robust to UTF-16) and build a price map.
     """
@@ -178,7 +182,7 @@ def load_enterprise_csv(path: str) -> Dict[Key, Decimal]:
     return normalise_enterprise_rows(clean_rows(rows))
 
 
-def normalise_enterprise_rows(rows: List[Dict[str, Any]]) -> Dict[Key, Decimal]:
+def normalise_enterprise_rows(rows: list[dict[str, Any]]) -> dict[Key, Decimal]:
     """
     Build the enterprise price map from rows already cleaned to canonical headings.
 
@@ -186,7 +190,7 @@ def normalise_enterprise_rows(rows: List[Dict[str, Any]]) -> Dict[Key, Decimal]:
     Value: Decimal(unitPrice), falling back to retailPrice. Keeps the LOWEST positive
            price when duplicates appear.
     """
-    out: Dict[Key, Decimal] = {}
+    out: dict[Key, Decimal] = {}
 
     for r in rows:
         service = (r.get("serviceName") or r.get("productName") or "").strip()

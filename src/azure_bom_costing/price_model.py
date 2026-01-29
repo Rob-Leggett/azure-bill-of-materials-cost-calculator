@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from decimal import Decimal
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any
 
 from .handlers.api_management import price_api_management
 from .handlers.app_insights import price_app_insights
 from .handlers.app_service import price_app_service
+from .handlers.automation import price_automation
 from .handlers.backup import price_backup
 from .handlers.cognitive_search import price_cognitive_search
 from .handlers.container_apps import price_container_apps
@@ -17,7 +19,9 @@ from .handlers.dev_ops import price_dev_ops
 from .handlers.dns import price_dns
 from .handlers.egress import price_egress
 from .handlers.entra_id import price_entra_id
+from .handlers.event_grid import price_event_grid
 from .handlers.event_hubs import price_event_hubs
+from .handlers.expressroute import price_expressroute
 from .handlers.fabric import price_fabric
 from .handlers.front_door import price_front_door
 from .handlers.functions import price_functions
@@ -26,14 +30,18 @@ from .handlers.key_vault import price_key_vault
 from .handlers.kubernetes import price_kubernetes
 from .handlers.load_balancers import price_load_balancers
 from .handlers.log_analytics import price_log_analytics
+from .handlers.logic_apps import price_logic_apps
 from .handlers.open_ai import price_open_ai
 from .handlers.private_network import price_private_network
 from .handlers.redis import price_redis
+from .handlers.sentinel import price_sentinel
+from .handlers.service_bus import price_service_bus
+from .handlers.site_recovery import price_site_recovery
 from .handlers.sql import price_sql
 from .handlers.storage import price_storage
 from .handlers.synapse import price_synapse
 from .handlers.vm import price_vm
-
+from .handlers.vpn_gateway import price_vpn_gateway
 from .helpers.csv import arm_region
 from .helpers.math import decimal, money
 from .pricing.enterprise import (
@@ -52,7 +60,7 @@ log = logging.getLogger(__name__)
 # Component prep helpers
 # ---------------------------------------------------------------------------
 
-def _derive_quantity(component: Dict[str, Any]) -> Decimal:
+def _derive_quantity(component: dict[str, Any]) -> Decimal:
     """
     Derive a neutral 'quantity' if not explicitly provided.
 
@@ -102,7 +110,7 @@ def _derive_quantity(component: Dict[str, Any]) -> Decimal:
     return decimal(1)
 
 
-def _apply_assumptions(component: Dict[str, Any], assumptions: Dict[str, Any]) -> None:
+def _apply_assumptions(component: dict[str, Any], assumptions: dict[str, Any]) -> None:
     """
     Apply common assumptions to a raw component dict (in-place).
     """
@@ -110,7 +118,7 @@ def _apply_assumptions(component: Dict[str, Any], assumptions: Dict[str, Any]) -
         component["hours_per_month"] = assumptions.get("hours_per_month", 730)
 
 
-def _prepare_component(component: Dict[str, Any], assumptions: Dict[str, Any]) -> Dict[str, Any]:
+def _prepare_component(component: dict[str, Any], assumptions: dict[str, Any]) -> dict[str, Any]:
     """
     Return a copy of `component` with:
       - assumptions applied
@@ -148,12 +156,12 @@ def apply_optimisations(total: Decimal, assumptions: dict) -> Decimal:
 
 def _load_enterprise_prices(
         *,
-        enterprise_price_sheet_api: Optional[str],
-        billing_account: Optional[str],
-        enrollment_account: Optional[str],
-        aad_token: Optional[str],
-        enterprise_csv: Optional[str],
-) -> Dict[Key, Decimal]:
+        enterprise_price_sheet_api: str | None,
+        billing_account: str | None,
+        enrollment_account: str | None,
+        aad_token: str | None,
+        enterprise_csv: str | None,
+) -> dict[Key, Decimal]:
     """
     Build the enterprise price map:
 
@@ -161,7 +169,7 @@ def _load_enterprise_prices(
       2) Otherwise, if a local CSV is provided, load from CSV.
       3) Otherwise, return an empty map (use retail only).
     """
-    ent_prices: Dict[Key, Decimal] = {}
+    ent_prices: dict[Key, Decimal] = {}
     tried_enterprise = False
 
     try:
@@ -204,18 +212,16 @@ def _make_handlers(
         *,
         region: str,
         currency: str,
-        ent_prices: Dict[Key, Decimal],
-) -> Dict[str, Callable[[Dict[str, Any]], Tuple[Decimal, str]]]:
+        ent_prices: dict[Key, Decimal],
+) -> dict[str, Callable[[dict[str, Any]], tuple[Decimal, str]]]:
     """
     Map component 'type' -> pricing function bound with region / currency / enterprise prices.
     """
     return {
-        "open_ai":         lambda c: price_open_ai(c, region, currency, ent_prices),
-        "kubernetes":      lambda c: price_kubernetes(c, region, currency, ent_prices),
         "api_management":  lambda c: price_api_management(c, region, currency, ent_prices),
         "app_insights":    lambda c: price_app_insights(c, region, currency, ent_prices),
         "app_service":     lambda c: price_app_service(c, region, currency, ent_prices),
-        "egress":          lambda c: price_egress(c, region, currency, ent_prices),
+        "automation":      lambda c: price_automation(c, region, currency, ent_prices),
         "backup":          lambda c: price_backup(c, region, currency, ent_prices),
         "cognitive_search":lambda c: price_cognitive_search(c, region, currency, ent_prices),
         "container_apps":  lambda c: price_container_apps(c, region, currency, ent_prices),
@@ -224,21 +230,31 @@ def _make_handlers(
         "defender":        lambda c: price_defender(c, region, currency, ent_prices),
         "dev_ops":         lambda c: price_dev_ops(c, region, currency, ent_prices),
         "dns":             lambda c: price_dns(c, region, currency, ent_prices),
+        "egress":          lambda c: price_egress(c, region, currency, ent_prices),
         "entra_id":        lambda c: price_entra_id(c, region, currency, ent_prices),
+        "event_grid":      lambda c: price_event_grid(c, region, currency, ent_prices),
         "event_hubs":      lambda c: price_event_hubs(c, region, currency, ent_prices),
+        "expressroute":    lambda c: price_expressroute(c, region, currency, ent_prices),
         "fabric":          lambda c: price_fabric(c, region, currency, ent_prices),
         "front_door":      lambda c: price_front_door(c, region, currency, ent_prices),
         "functions":       lambda c: price_functions(c, region, currency, ent_prices),
         "governance":      lambda c: price_governance(c, region, currency, ent_prices),
         "key_vault":       lambda c: price_key_vault(c, region, currency, ent_prices),
+        "kubernetes":      lambda c: price_kubernetes(c, region, currency, ent_prices),
         "load_balancers":  lambda c: price_load_balancers(c, region, currency, ent_prices),
         "log_analytics":   lambda c: price_log_analytics(c, region, currency, ent_prices),
+        "logic_apps":      lambda c: price_logic_apps(c, region, currency, ent_prices),
+        "open_ai":         lambda c: price_open_ai(c, region, currency, ent_prices),
         "private_network": lambda c: price_private_network(c, region, currency, ent_prices),
         "redis":           lambda c: price_redis(c, region, currency, ent_prices),
+        "sentinel":        lambda c: price_sentinel(c, region, currency, ent_prices),
+        "service_bus":     lambda c: price_service_bus(c, region, currency, ent_prices),
+        "site_recovery":   lambda c: price_site_recovery(c, region, currency, ent_prices),
         "sql":             lambda c: price_sql(c, region, currency, ent_prices),
         "storage":         lambda c: price_storage(c, region, currency, ent_prices),
         "synapse":         lambda c: price_synapse(c, region, currency, ent_prices),
         "vm":              lambda c: price_vm(c, region, currency, ent_prices),
+        "vpn_gateway":     lambda c: price_vpn_gateway(c, region, currency, ent_prices),
     }
 
 
@@ -249,24 +265,28 @@ def _make_handlers(
 def run_model(
         *,
         bom: dict,
-        currency_override: Optional[str],
-        retail_offline: Optional[bool],
-        retail_filter: Optional[str],
-        retail_temp_dir: Optional[str],
-        enterprise_csv: Optional[str],
-        enterprise_price_sheet_api: Optional[str], # "mca" | "ea" | None
-        billing_account: Optional[str],
-        enrollment_account: Optional[str],
-        aad_token: Optional[str],
+        currency_override: str | None,
+        pricing_tier: str = "standard",
+        retail_offline: bool | None,
+        retail_filter: str | None,
+        retail_temp_dir: str | None,
+        enterprise_csv: str | None,
+        enterprise_price_sheet_api: str | None,  # "mca" | "ea" | None
+        billing_account: str | None,
+        enrollment_account: str | None,
+        aad_token: str | None,
 ) -> None:
     """
     Execute the pricing model:
 
       1) (Optional) Download Retail Prices JSON pages to a temp folder.
-      2) Load enterprise prices (API or CSV).
+      2) Load enterprise prices (API or CSV) if pricing_tier is 'enterprise'.
       3) Price each workload's components with the correct region.
       4) Apply a simple SP/RI optimisation view.
       5) Print summary totals.
+
+    Args:
+        pricing_tier: 'standard' (Retail API) or 'enterprise' (MCA/EA pricing).
 
     Retail controls:
       - retail_offline (arg) or bom["retail_offline"] enables the JSON dump.
@@ -275,6 +295,8 @@ def run_model(
     """
     currency = currency_override or bom.get("currency", "AUD")
     assumptions = bom.get("assumptions", {})
+
+    print(f"\n=== Azure BOM Cost Calculator ({pricing_tier.upper()} pricing) ===")
 
     # -----------------------------------------------------------------------
     # 1) Retail JSON dump (per-page) – optional but enabled if retail_offline set
@@ -303,15 +325,17 @@ def run_model(
             log.warning("Failed to download Retail JSON pages: %s", exc)
 
     # -----------------------------------------------------------------------
-    # 2) Enterprise price map (may be empty if not configured)
+    # 2) Enterprise price map (only load if pricing_tier is 'enterprise')
     # -----------------------------------------------------------------------
-    ent_prices = _load_enterprise_prices(
-        enterprise_price_sheet_api=enterprise_price_sheet_api,
-        billing_account=billing_account,
-        enrollment_account=enrollment_account,
-        aad_token=aad_token,
-        enterprise_csv=enterprise_csv,
-    )
+    ent_prices: dict[Key, Decimal] = {}
+    if pricing_tier == "enterprise":
+        ent_prices = _load_enterprise_prices(
+            enterprise_price_sheet_api=enterprise_price_sheet_api,
+            billing_account=billing_account,
+            enrollment_account=enrollment_account,
+            aad_token=aad_token,
+            enterprise_csv=enterprise_csv,
+        )
 
     print("\n=== Monthly Cost by Workload (Original vs With SP/RI modelling) ===")
     print(f"{'Workload':25} {'Tier':8} {'PAYG est.':>16} {'With Opt.':>16}")

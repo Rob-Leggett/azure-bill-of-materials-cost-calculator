@@ -1,9 +1,9 @@
-from typing import Optional, Dict
 
 import requests
 
+
 # ---------- HTTP helpers ----------
-def http_get_json(url: str, headers: Optional[Dict[str, str]] = None) -> dict:
+def http_get_json(url: str, headers: dict[str, str] | None = None) -> dict:
     """HTTP GET a JSON endpoint and return the decoded JSON.
 
     Raises:
@@ -14,7 +14,7 @@ def http_get_json(url: str, headers: Optional[Dict[str, str]] = None) -> dict:
     return r.json()
 
 
-def http_get(url: str, headers: Optional[Dict[str, str]] = None) -> requests.Response:
+def http_get(url: str, headers: dict[str, str] | None = None) -> requests.Response:
     """HTTP GET a resource and return the raw Response (stream enabled).
 
     Useful for large payloads/files. Caller is responsible for consuming

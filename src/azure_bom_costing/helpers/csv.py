@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import Dict, Optional, Any, Iterable, List, Set
-from decimal import Decimal
 import json
+from collections.abc import Iterable
+from decimal import Decimal
+from typing import Any
 
 # If these live next to this file, import directly; otherwise adjust path.
 from .math import decimal  # used for price parsing
@@ -19,7 +20,7 @@ ALLOWED_HEADINGS = (
 )
 
 # Default row skeleton: ensure every cleaned row always has these keys
-_DEFAULTS: Dict[str, Optional[str]] = {k: None for k in ALLOWED_HEADINGS}
+_DEFAULTS: dict[str, str | None] = {k: None for k in ALLOWED_HEADINGS}
 
 
 # -------------------------------------------------------------------
@@ -36,7 +37,7 @@ def arm_region(region_str: str) -> str:
 # -------------------------------------------------------------------
 # Cleaning / normalization entry points
 # -------------------------------------------------------------------
-def clean_rows(rows: Iterable[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def clean_rows(rows: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
     """
     Convert arbitrary input rows (Retail API, Enterprise CSV) to the canonical schema.
     - We never invent values; we only normalize where obvious equivalents exist.
@@ -45,7 +46,7 @@ def clean_rows(rows: Iterable[Dict[str, Any]]) -> List[Dict[str, Any]]:
     return [_clean_row_to_allowed(r) for r in rows]
 
 
-def dedup_merge(lists: List[List[Dict[str, Any]]]) -> List[Dict[str, Any]]:
+def dedup_merge(lists: list[list[dict[str, Any]]]) -> list[dict[str, Any]]:
     """
     Merge lists of already-cleaned rows, removing duplicates.
 
@@ -54,7 +55,7 @@ def dedup_merge(lists: List[List[Dict[str, Any]]]) -> List[Dict[str, Any]]:
       2) otherwise, a tuple of (serviceName, skuName, meterName, unitOfMeasure, armRegionName)
     """
     seen: set = set()
-    out: List[Dict[str, Any]] = []
+    out: list[dict[str, Any]] = []
 
     for lst in lists:
         for r in lst or []:
@@ -76,7 +77,7 @@ def dedup_merge(lists: List[List[Dict[str, Any]]]) -> List[Dict[str, Any]]:
 # -------------------------------------------------------------------
 # Small utilities used by the cleaner
 # -------------------------------------------------------------------
-def pick_first_dict(d: Dict[str, Any], *keys: str) -> Optional[Any]:
+def pick_first_dict(d: dict[str, Any], *keys: str) -> Any | None:
     """Return the first key in *keys* that exists in dict d and is not blank."""
     for k in keys:
         v = d.get(k)
@@ -85,7 +86,7 @@ def pick_first_dict(d: Dict[str, Any], *keys: str) -> Optional[Any]:
     return None
 
 
-def pick(items: List[dict], prefer_uom: Optional[str] = None) -> Optional[dict]:
+def pick(items: list[dict], prefer_uom: str | None = None) -> dict | None:
     """
     Pick the first positive-price row, preferring a given UOM if specified.
     (Kept for compatibility with existing callers.)
@@ -102,7 +103,7 @@ def pick(items: List[dict], prefer_uom: Optional[str] = None) -> Optional[dict]:
     return items[0]
 
 
-def _to_scalar(v: Any) -> Optional[str]:
+def _to_scalar(v: Any) -> str | None:
     """
     Ensure a CSV-safe scalar:
       - None/"" -> None
@@ -122,7 +123,7 @@ def _to_scalar(v: Any) -> Optional[str]:
 # -------------------------------------------------------------------
 # Main normalization function
 # -------------------------------------------------------------------
-def _clean_row_to_allowed(r: Dict[str, Any]) -> Dict[str, Any]:
+def _clean_row_to_allowed(r: dict[str, Any]) -> dict[str, Any]:
     """
     Map common Azure column variants into the canonical schema and drop all extras.
     Symmetry:
@@ -149,9 +150,13 @@ def _clean_row_to_allowed(r: Dict[str, Any]) -> Dict[str, Any]:
     )
 
     # ---- Units & prices ----
-    out["unitOfMeasure"] = pick_first_dict(r, "unitOfMeasure", "UnitOfMeasure", "UnitOfMeasureDisplay")
+    out["unitOfMeasure"] = pick_first_dict(
+        r, "unitOfMeasure", "UnitOfMeasure", "UnitOfMeasureDisplay"
+    )
 
-    unit_price = pick_first_dict(r, "unitPrice", "UnitPrice", "DiscountedPrice", "EffectiveUnitPrice")
+    unit_price = pick_first_dict(
+        r, "unitPrice", "UnitPrice", "DiscountedPrice", "EffectiveUnitPrice"
+    )
     retail_price = pick_first_dict(r, "retailPrice", "RetailPrice")
 
     # Keep both in sync when only one exists; helps downstream logic
@@ -192,10 +197,10 @@ def _clean_row_to_allowed(r: Dict[str, Any]) -> Dict[str, Any]:
 # -------------------------------------------------------------------
 # Row-level helpers (filtering / sorting)
 # -------------------------------------------------------------------
-CsvRow = Dict[str, object]
+CsvRow = dict[str, object]
 
 
-def prefer_region(rows: List[CsvRow], region: str) -> List[CsvRow]:
+def prefer_region(rows: list[CsvRow], region: str) -> list[CsvRow]:
     """
     Stable-sort rows so that the given region appears first, then global/empty, then others.
     """
@@ -212,7 +217,7 @@ def prefer_region(rows: List[CsvRow], region: str) -> List[CsvRow]:
     return sorted(rows, key=keyfn)
 
 
-def pick_first_row(rows: List[CsvRow]) -> Optional[CsvRow]:
+def pick_first_row(rows: list[CsvRow]) -> CsvRow | None:
     """Pick the first row or None."""
     return rows[0] if rows else None
 
@@ -244,12 +249,12 @@ def _eq(i: CsvRow, key: str, val: str) -> bool:
 
 def filter_rows(
         items: Iterable[CsvRow],
-        required_equals: Dict[str, str],
-        required_uom: Optional[str] = None,
-        must_contain: Optional[List[str]] = None,
-        allowed_price_types: Optional[Set[str]] = None,  # e.g. {"Consumption","DevTestConsumption"}
-        region_hint: Optional[str] = None,               # human-readable region, e.g. "Australia East"
-) -> List[CsvRow]:
+        required_equals: dict[str, str],
+        required_uom: str | None = None,
+        must_contain: list[str] | None = None,
+        allowed_price_types: set[str] | None = None,  # e.g. {"Consumption","DevTestConsumption"}
+        region_hint: str | None = None,               # human-readable region, e.g. "Australia East"
+) -> list[CsvRow]:
     """
     Deterministic CSV-based filter:
       - exact equality on provided columns
@@ -263,7 +268,7 @@ def filter_rows(
     uom_l = (required_uom or "").lower()
     arm_region_l = arm_region(region_hint).lower() if region_hint else None
 
-    out: List[CsvRow] = []
+    out: list[CsvRow] = []
     for i in items:
         # positive price only
         if not _is_positive(i):

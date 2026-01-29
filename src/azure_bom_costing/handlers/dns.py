@@ -1,12 +1,12 @@
 from decimal import Decimal
-from typing import Dict
 
 from ..helpers.math import decimal
 from ..helpers.pricing import price_by_service
 from ..helpers.string import stripped
 from ..types import Key
 
-def price_dns(component, region, currency, ent_prices: Dict[Key, Decimal]):
+
+def price_dns(component, region, currency, ent_prices: dict[Key, Decimal]):
     service = stripped(component.get("service"), None)
     product = stripped(component.get("product"), None)
     sku     = stripped(component.get("sku"), None)

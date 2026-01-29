@@ -1,30 +1,29 @@
 import logging
 from decimal import Decimal
-from typing import Dict, List, Optional, Set, Tuple
 
-from .csv import dedup_merge, arm_region, filter_rows, prefer_region, pick_first
-from .math import decimal
 from ..pricing.enterprise import enterprise_lookup
-from ..pricing.retail import search_saved_retail_items, retail_fetch_items_live
+from ..pricing.retail import retail_fetch_items_live, search_saved_retail_items
 from ..types import Key
+from .csv import arm_region, dedup_merge, filter_rows, pick_first, prefer_region
+from .math import decimal
 
 logger = logging.getLogger(__name__)
 
 def price_by_service(
         *,
         service: str,
-        product: Optional[str] = None,
+        product: str | None = None,
         sku: str,
         region: str,
         currency: str,
-        ent_prices: Dict[Key, Decimal],
-        uom: Optional[str],
+        ent_prices: dict[Key, Decimal],
+        uom: str | None,
         qty: Decimal,
         hours: Decimal,
-        must_contain: Optional[List[str]] = None,
-        extra_required_equals: Optional[Dict[str, str]] = None,
-        allowed_price_types: Optional[Set[str]] = None,  # defaults to {"Consumption","DevTestConsumption","Reservation"}
-) -> Tuple[Decimal, str]:
+        must_contain: list[str] | None = None,
+        extra_required_equals: dict[str, str] | None = None,
+        allowed_price_types: set[str] | None = None,
+) -> tuple[Decimal, str]:
     """
     Price a component using:
       1) Enterprise price (exact match on service, sku, region, uom)
@@ -71,7 +70,7 @@ def price_by_service(
     logger.debug("No enterprise match; using retail fallback via ARM region '%s'", arm)
 
     # Build a list of increasingly broad filters.
-    filters: List[str] = [
+    filters: list[str] = [
         f"serviceName eq '{service}' and armRegionName eq '{arm}'",
         f"serviceName eq '{service}'",
     ]
@@ -82,7 +81,7 @@ def price_by_service(
         ]
 
     # First try searching locally saved JSON pages
-    lists_from_saved: List[List[dict]] = []
+    lists_from_saved: list[list[dict]] = []
     for fexpr in filters:
         rows = search_saved_retail_items(
             filter_expr=fexpr,
@@ -109,7 +108,7 @@ def price_by_service(
             service,
             f' / {product}' if product else "",
         )
-        lists_from_live: List[List[dict]] = []
+        lists_from_live: list[list[dict]] = []
         for fexpr in filters:
             rows = retail_fetch_items_live(fexpr, currency)
             if rows:
@@ -132,7 +131,7 @@ def price_by_service(
 
     tokens = [t.lower() for t in (must_contain or []) if t]
 
-    def _filter(required_eq: Dict[str, str]) -> List[dict]:
+    def _filter(required_eq: dict[str, str]) -> list[dict]:
         rows = filter_rows(
             items,
             required_equals=required_eq,

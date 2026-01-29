@@ -1,4 +1,5 @@
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import ROUND_HALF_UP, Decimal
+
 
 def money(v) -> Decimal:
     """Quantise a numeric value to 2 decimal places using ROUND_HALF_UP.

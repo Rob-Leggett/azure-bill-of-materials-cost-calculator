@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from urllib.parse import quote as url_quote
-from typing import Optional, List, Callable
-
 import errno
 import json
 import os
 import re
 import time
+from collections.abc import Callable
+from urllib.parse import quote as url_quote
 
 from ..helpers.csv import clean_rows
 from ..helpers.http import get_session
@@ -44,7 +43,7 @@ def _acquire_lock(lock_path: str):
         return fd
     except OSError as e:
         if e.errno == errno.EEXIST:
-            raise RuntimeError(f"Lock exists: {lock_path}")
+            raise RuntimeError(f"Lock exists: {lock_path}") from e
         raise
 
 
@@ -66,7 +65,7 @@ def _load_checkpoint(cp_path: str) -> dict:
     Keys: next_link, page_no
     """
     try:
-        with open(cp_path, "r", encoding="utf-8") as f:
+        with open(cp_path, encoding="utf-8") as f:
             return json.load(f)
     except Exception:
         return {}
@@ -100,7 +99,7 @@ def _has_positive_price(row: dict) -> bool:
 def download_retail_pages(
         temp_dir: str = os.path.join(_DIR_EXAMPLES, _DIR_RETAIL_TEMP),
         currency: str = "AUD",
-        filter_expr: Optional[str] = None,
+        filter_expr: str | None = None,
         sleep_between_pages: float = 0.03,
 ) -> int:
     """
@@ -210,7 +209,7 @@ def download_retail_pages(
 _EQ_RE = re.compile(r"\s*(\w+)\s+eq\s+'([^']*)'\s*", re.IGNORECASE)
 _CONTAINS_RE = re.compile(r"\s*contains\(\s*(\w+)\s*,\s*'([^']*)'\s*\)\s*", re.IGNORECASE)
 
-def _parse_simple_filter(filter_expr: str) -> List[Callable[[dict], bool]]:
+def _parse_simple_filter(filter_expr: str) -> list[Callable[[dict], bool]]:
     """
     Tiny subset of OData $filter:
       - "field eq 'value'"
@@ -222,7 +221,7 @@ def _parse_simple_filter(filter_expr: str) -> List[Callable[[dict], bool]]:
         return [lambda _: True]
 
     # Split by top-level " and "
-    parts: List[str] = []
+    parts: list[str] = []
     depth, buf = 0, []
     s = filter_expr
     i = 0
@@ -242,7 +241,7 @@ def _parse_simple_filter(filter_expr: str) -> List[Callable[[dict], bool]]:
     if buf:
         parts.append("".join(buf).strip())
 
-    preds: List[Callable[[dict], bool]] = []
+    preds: list[Callable[[dict], bool]] = []
     for p in parts:
         m = _EQ_RE.fullmatch(p)
         if m:
@@ -290,7 +289,7 @@ def _iter_saved_pages(temp_dir: str):
     for name in sorted(names, key=_page_key):
         path = os.path.join(temp_dir, name)
         try:
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 yield json.load(f)
         except Exception:
             # Skip corrupt page files
@@ -302,8 +301,7 @@ def _iter_saved_items(temp_dir: str):
     Yield individual item dicts from all saved pages.
     """
     for page in _iter_saved_pages(temp_dir):
-        for item in page.get("Items", []) or []:
-            yield item
+        yield from page.get("Items", []) or []
 
 
 def search_saved_retail_items(
@@ -312,20 +310,21 @@ def search_saved_retail_items(
         temp_dir: str = os.path.join(_DIR_EXAMPLES, _DIR_RETAIL_TEMP),
         *,
         require_positive_price: bool = False,
-) -> List[dict]:
+) -> list[dict]:
     """
     Search locally saved Retail JSON pages (no live API call).
 
-    - filter_expr: same simple syntax as _parse_simple_filter (field eq 'x', contains(field,'x') ANDed).
-    - currency: filters by currencyCode column (case-insensitive).
-    - require_positive_price: if True, only keep rows with positive retailPrice/unitPrice.
+    Args:
+        filter_expr: Simple OData filter (field eq 'x', contains(field,'x'), ANDed).
+        currency: Filters by currencyCode column (case-insensitive).
+        require_positive_price: If True, only keep rows with positive price.
 
     Returns: cleaned rows (via clean_rows) matching the filter.
     """
     preds = _parse_simple_filter(filter_expr)
     cur = (currency or "").upper()
 
-    matched: List[dict] = []
+    matched: list[dict] = []
     for item in _iter_saved_items(temp_dir):
         # Currency filter
         if cur and (item.get("currencyCode") or "").upper() not in ("", cur):
@@ -348,7 +347,7 @@ def search_saved_retail_items(
 def retail_fetch_items_live(
         filter_expr: str,
         currency: str,
-) -> List[dict]:
+) -> list[dict]:
     """
     Fetch items directly from the Retail API (no temp files, no CSV).
     Useful if you just want in-memory rows.
@@ -357,7 +356,7 @@ def retail_fetch_items_live(
     session = get_session()
     session.headers.update({"Accept": "application/json"})
 
-    items: List[dict] = []
+    items: list[dict] = []
     seen_urls: set[str] = set()
     max_attempts, backoff = 4, 0.75
 

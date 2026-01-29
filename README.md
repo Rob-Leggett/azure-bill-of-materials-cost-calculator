@@ -1,5 +1,6 @@
 # Azure Bill of Materials Cost Calculator
-BOM‑driven Azure Cost Calculator (Enterprise + Retail + Offline Retail JSON)
+
+BOM-driven Azure Cost Calculator supporting both **Standard** (Retail API) and **Enterprise** (MCA/EA) pricing tiers.
 
 ---
 
@@ -8,12 +9,11 @@ BOM‑driven Azure Cost Calculator (Enterprise + Retail + Offline Retail JSON)
 This cost calculator ingests a **BOM (Bill of Materials)** describing your Azure workloads and produces:
 
 - 🔹 **Monthly PAYG cost estimate**
-- 🔹 **SP/RI‑optimised monthly cost**
+- 🔹 **SP/RI-optimised monthly cost**
 - 🔹 Fully automated pricing from:
-    - **Enterprise Price Sheet API (MCA/EA)**
-    - **Enterprise CSV price sheets**
-    - **Retail Prices API**
-    - **Retail Offline JSON (download once → super fast afterwards)**
+    - **Standard Pricing** – Azure Retail Prices API (public list pricing)
+    - **Enterprise Pricing** – MCA/EA Price Sheet API or CSV (contract rates)
+    - **Offline Mode** – Download retail prices once for fast, reproducible runs
 
 ---
 
@@ -27,86 +27,104 @@ pip install -e '.[dev]'
 
 ---
 
-## ⚙️ New Features
+## 🧪 Usage
 
-### ✅ **Retail JSON Offline Mode**
-You can now download the full Azure Retail pricing pages to disk:
-
-```
-examples/temp/retail-prices-XXXX.json
-```
-
-After this, your model runs:
-
-✔️ Offline  
-✔️ Faster  
-✔️ Reproducibly  
-✔️ Without hitting the API
-
----
-
-## 🧪 How To Run
-
----
-
-### **1) Retail Offline Mode (downloads JSON pages)**
+### Quick Start
 
 ```bash
-azure-bom --bom examples/azure_bom.json           --retail-offline           --currency AUD
+# Standard pricing (Retail API)
+azure-bom --bom examples/azure_bom.json --pricing-tier standard --currency AUD
+
+# Enterprise pricing (requires MCA/EA credentials)
+azure-bom --bom examples/azure_bom.json --pricing-tier enterprise \
+    --enterprise-price-sheet-api mca --billing-account <BA_ID> --currency AUD
 ```
 
-Optional flags:
+### Pricing Tiers
 
-```bash
---retail-temp-dir examples/temp
---retail-filter "serviceName eq 'Virtual Machines'"
-```
+| Tier | Description | Use Case |
+|------|-------------|----------|
+| `standard` | Uses Azure Retail Prices API (public list pricing) | General estimates, no Azure contract |
+| `enterprise` | Uses MCA/EA price sheets (contract rates) | Match Azure Pricing Calculator exactly |
 
 ---
 
-### **2) Retail Only (live API)**
+### **1) Standard Pricing (default)**
+
+Uses the public Azure Retail Prices API:
 
 ```bash
 azure-bom --bom examples/azure_bom.json --currency AUD
 ```
 
+With offline mode (download prices once, run offline afterwards):
+
+```bash
+azure-bom --bom examples/azure_bom.json --retail-offline --currency AUD
+```
+
+Optional flags:
+
+```bash
+--retail-temp-dir examples/retail    # Directory to store cached prices
+--retail-filter "serviceName eq 'Virtual Machines'"  # Filter API results
+```
+
 ---
 
-### **3) Enterprise Price Sheet API – MCA**
+### **2) Enterprise Pricing – MCA**
+
+Uses your Microsoft Customer Agreement contract rates:
 
 ```bash
 export AZ_TENANT_ID=...
 export AZ_CLIENT_ID=...
 export AZ_CLIENT_SECRET=...
 
-azure-bom --bom examples/azure_bom.json           --enterprise-price-sheet-api mca           --billing-account <BA_ID>           --currency AUD
+azure-bom --bom examples/azure_bom.json \
+    --pricing-tier enterprise \
+    --enterprise-price-sheet-api mca \
+    --billing-account <BA_ID> \
+    --currency AUD
 ```
 
 ---
 
-### **4) Enterprise Price Sheet API – EA**
+### **3) Enterprise Pricing – EA**
+
+Uses your Enterprise Agreement contract rates:
 
 ```bash
 export AZ_TENANT_ID=...
 export AZ_CLIENT_ID=...
 export AZ_CLIENT_SECRET=...
 
-azure-bom --bom examples/azure_bom.json           --enterprise-price-sheet-api ea           --enrollment-account <EA_ID>           --currency AUD
+azure-bom --bom examples/azure_bom.json \
+    --pricing-tier enterprise \
+    --enterprise-price-sheet-api ea \
+    --enrollment-account <EA_ID> \
+    --currency AUD
 ```
 
 ---
 
-### **5) Enterprise CSV + Retail Offline JSON**
+### **4) Enterprise CSV + Retail Fallback**
+
+Use a manually exported enterprise price sheet with retail fallback:
 
 ```bash
-azure-bom --bom examples/azure_bom.json           --enterprise-csv examples/enterprise_prices.csv           --retail-offline           --currency AUD
+azure-bom --bom examples/azure_bom.json \
+    --pricing-tier enterprise \
+    --enterprise-csv examples/enterprise_prices.csv \
+    --retail-offline \
+    --currency AUD
 ```
 
 ---
 
-## 📘 BOM Structure - Important Fields
+## 📘 BOM Structure
 
-Top‑level BOM fields:
+Top-level BOM fields:
 
 ```json
 {
@@ -117,8 +135,7 @@ Top‑level BOM fields:
     "ri": { "coverage_pct": 0.25 }
   },
   "retail_offline": true,
-  "retail_filter": "serviceName eq 'Azure App Service'",
-  "retail_temp_dir": "examples/temp",
+  "retail_temp_dir": "examples/retail",
   "workloads": [{
       "name": "All-Services-AE",
       "region": "Australia East",
@@ -140,46 +157,91 @@ Component example:
 }
 ```
 
+### Supported Component Types
+
+| Type | Service |
+|------|---------|
+| `api_management` | Azure API Management |
+| `app_insights` | Application Insights |
+| `app_service` | Azure App Service |
+| `automation` | Azure Automation |
+| `backup` | Azure Backup |
+| `cognitive_search` | Azure Cognitive Search |
+| `container_apps` | Azure Container Apps |
+| `data_factory` | Azure Data Factory |
+| `databricks` | Azure Databricks |
+| `defender` | Microsoft Defender for Cloud |
+| `dev_ops` | Azure DevOps |
+| `dns` | Azure DNS |
+| `egress` | Data Transfer/Egress |
+| `entra_id` | Microsoft Entra ID |
+| `event_grid` | Azure Event Grid |
+| `event_hubs` | Azure Event Hubs |
+| `expressroute` | Azure ExpressRoute |
+| `fabric` | Microsoft Fabric |
+| `front_door` | Azure Front Door |
+| `functions` | Azure Functions |
+| `governance` | Azure Governance |
+| `key_vault` | Azure Key Vault |
+| `kubernetes` | Azure Kubernetes Service |
+| `load_balancers` | Azure Load Balancer |
+| `log_analytics` | Azure Log Analytics |
+| `logic_apps` | Azure Logic Apps |
+| `open_ai` | Azure OpenAI Service |
+| `private_network` | Virtual Network / Private Link |
+| `redis` | Azure Cache for Redis |
+| `sentinel` | Microsoft Sentinel |
+| `service_bus` | Azure Service Bus |
+| `site_recovery` | Azure Site Recovery |
+| `sql` | Azure SQL Database |
+| `storage` | Azure Storage |
+| `synapse` | Azure Synapse Analytics |
+| `vm` | Azure Virtual Machines |
+| `vpn_gateway` | Azure VPN Gateway |
+
 ---
 
 ## 📊 Output Example
 
 ```
+=== Azure BOM Cost Calculator (STANDARD pricing) ===
+
 === Monthly Cost by Workload (Original vs With SP/RI modelling) ===
-Workload                  Tier        PAYG est.       With Opt.
+Workload                  Tier            PAYG est.        With Opt.
 
 -- All-Services-AE components (australiaeast) --
-  • app_service         Azure App Service P1v4 @0.45977/unit × 3 × 730 = $1,006.90
+  • app_service        Azure App Service P1v4 @0.45977/unit × 3 × 730 = $1,006.90
+  • vm                 Virtual Machines Standard_D2_v5 @0.036/unit × 2 × 730 = $53.00
   ...
-All-Services-AE         prod          $4,520.92         $3,100.14
+All-Services-AE           prod           $4,520.92       $3,100.14
 
 === Grand Total (Monthly, With Optimisations) ===
-$3,850.44 AUD
+$3,100.14 AUD
 ```
 
 ---
 
-## 🧾 Azure Pricing Source Summary
+## 🧾 Pricing Source Summary
 
-| Source                              | Used When                                               | Notes                              |
-|-------------------------------------|---------------------------------------------------------|------------------------------------|
-| Enterprise Price Sheet API (MCA/EA) | If configured                                           | Matches Azure Calculator pricing   |
-| Enterprise CSV                      | API disabled or unavailable                             | Must be exported from Azure Portal |
-| Retail Offline JSON                 | If `--retail-offline` or BOM sets `retail_offline=true` | Fast, repeatable                   |
-| Retail Live API                     | Default fallback                                        | Public list pricing                |
+| Pricing Tier | Source | Notes |
+|--------------|--------|-------|
+| `standard` | Retail Prices API | Public list pricing |
+| `standard` + `--retail-offline` | Cached JSON files | Fast, offline, reproducible |
+| `enterprise` | MCA/EA Price Sheet API | Your contract rates |
+| `enterprise` + `--enterprise-csv` | Exported CSV | Manual fallback |
 
 ---
 
 ## ⚠️ Matching Azure Pricing Calculator
 
-Azure Retail API returns **public retail list price**, not your contract rate.
+The Azure Pricing Calculator uses **your MCA/EA contract rates**, not public list prices.
 
-Azure Pricing Calculator uses **your MCA/EA discounted contract price**.
+To match it exactly, use enterprise pricing:
 
-To match it exactly, run with:
-
-```
---enterprise-price-sheet-api mca --billing-account <BA_ID>
+```bash
+azure-bom --pricing-tier enterprise \
+    --enterprise-price-sheet-api mca \
+    --billing-account <BA_ID>
 ```
 
 ---
@@ -189,14 +251,31 @@ To match it exactly, run with:
 ```
 src/azure_bom_costing/
   cli.py               # CLI entrypoint
-  price_model.py       # Main orchestration + handlers
+  price_model.py       # Main orchestration
   pricing/
     retail.py          # Offline + live Retail API
     enterprise.py      # MCA/EA API + CSV
-  handlers/            # Per-service pricing logic
-  helpers/             # decimals, filters, region mapping
+  handlers/            # Per-service pricing logic (37 services)
+  helpers/             # Math, CSV, HTTP, pricing utilities
 examples/
-  azure_bom.json
-  enterprise_prices.sample.csv
-  temp/
+  azure_bom.json       # Sample BOM file
+  retail/              # Cached retail price pages
+```
+
+---
+
+## 🛠️ Development
+
+```bash
+# Install dev dependencies
+pip install -e '.[dev]'
+
+# Run linter
+ruff check src/
+
+# Run type checker
+mypy src/
+
+# Run tests
+pytest
 ```

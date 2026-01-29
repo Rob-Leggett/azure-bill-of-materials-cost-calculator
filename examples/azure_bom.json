@@ -31,9 +31,9 @@
         {
           "type": "functions",
           "service": "Functions",
-          "sku": "On Demand",
-          "executions": 0,
-          "hours_per_month": 1,
+          "sku": "Standard",
+          "executions": 5000000,
+          "hours_per_month": 730,
           "purpose": "API & event-driven logic"
         },
         {

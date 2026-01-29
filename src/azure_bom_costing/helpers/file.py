@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+
 def filesize(p: str) -> int:
     """Return file size in bytes, 0 if missing. Defensive against bad paths."""
     try:
