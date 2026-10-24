@@ -131,7 +131,7 @@ def _prepare_component(component: dict[str, Any], assumptions: dict[str, Any]) -
     return prepared
 
 
-def apply_optimisations(total: Decimal, assumptions: dict) -> Decimal:
+def apply_optimisations(total: Decimal, assumptions: dict[str, Any]) -> Decimal:
     """
     Simple Savings Plan / Reserved Instance blending model.
 
@@ -153,6 +153,13 @@ def apply_optimisations(total: Decimal, assumptions: dict) -> Decimal:
 # ---------------------------------------------------------------------------
 # Enterprise pricing helpers
 # ---------------------------------------------------------------------------
+
+def _normalise_downloaded(rows: list[dict[str, Any]] | dict[str, Any]) -> dict[Key, Decimal]:
+    """Normalise a downloaded price sheet; unrecognised JSON payloads yield no prices."""
+    if isinstance(rows, list):
+        return normalise_enterprise_rows(rows)
+    log.warning("Price sheet download returned an unrecognised JSON payload; ignoring it.")
+    return {}
 
 def _load_enterprise_prices(
         *,
@@ -180,12 +187,12 @@ def _load_enterprise_prices(
             if enterprise_price_sheet_api == "mca" and billing_account:
                 log.info("Downloading MCA price sheet for billing account %s", billing_account)
                 rows = download_price_sheet_mca(aad_token, billing_account)
-                ent_prices = normalise_enterprise_rows(rows)
+                ent_prices = _normalise_downloaded(rows)
 
             elif enterprise_price_sheet_api == "ea" and enrollment_account:
                 log.info("Downloading EA price sheet for enrollment account %s", enrollment_account)
                 rows = download_price_sheet_ea(aad_token, enrollment_account)
-                ent_prices = normalise_enterprise_rows(rows)
+                ent_prices = _normalise_downloaded(rows)
 
         # CSV fallback
         if not ent_prices and enterprise_csv:
@@ -264,7 +271,7 @@ def _make_handlers(
 
 def run_model(
         *,
-        bom: dict,
+        bom: dict[str, Any],
         currency_override: str | None,
         pricing_tier: str = "standard",
         retail_offline: bool | None,

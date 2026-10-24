@@ -19,4 +19,4 @@ def get_aad_token(
     }
     r = requests.post(token_url, data=data, timeout=60)
     r.raise_for_status()
-    return r.json()["access_token"]
+    return str(r.json()["access_token"])

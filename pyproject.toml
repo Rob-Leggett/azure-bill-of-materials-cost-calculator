@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=84.2.1"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,36 +7,35 @@ name = "azure-bom-costing"
 version = "0.1.0"
 description = "Azure Bill of Materials cost modeller (Retail + Enterprise)"
 readme = "README.md"
-requires-python = ">=3.10"
-license = { text = "MIT" }
+requires-python = ">=3.13"
+license = "MIT"
 authors = [{ name = "Robert Leggett", email = "contact@robertleggett.com.au" }]
 dependencies = [
-    "requests>=2.32.0",
-    "tabulate>=0.9.0",
-    "pydantic>=2.9.0"      # for schema validation
+    "requests>=2.34.2",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
-    "pytest>=8.3.0",
-    "pytest-cov>=5.0.0",
-    "mypy>=1.11.0",
-    "ruff>=0.6.0",         # linter/formatter
-    "types-requests>=2.32.0.20240905",
-    "responses>=0.25.3"    # HTTP mocking
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+    "mypy>=2.4.0",
+    "ruff>=0.17.2",          # linter/formatter
+    "types-requests>=2.33.0.20261006",
+    "responses>=0.26.3",     # HTTP mocking
+    "pip-audit>=2.10.1",
 ]
 
 [project.scripts]
 azure-bom = "azure_bom_costing.cli:main"  # `azure-bom ...`
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.13"
 strict = true
 ignore_missing_imports = true
 
 [tool.ruff]
 line-length = 100
-target-version = "py310"
+target-version = "py313"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "UP", "B"]

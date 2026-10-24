@@ -1,4 +1,5 @@
 from decimal import Decimal
+from typing import Any
 
 from ..helpers.math import decimal
 from ..helpers.pricing import price_by_service
@@ -6,7 +7,12 @@ from ..helpers.string import stripped
 from ..types import Key
 
 
-def price_open_ai(component, region, currency, ent_prices: dict[Key, Decimal]):
+def price_open_ai(
+    component: dict[str, Any],
+    region: str,
+    currency: str,
+    ent_prices: dict[Key, Decimal],
+) -> tuple[Decimal, str]:
     service = stripped(component.get("service"), None)
     product = stripped(component.get("product"), None)
     sku     = stripped(component.get("sku"), None)

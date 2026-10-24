@@ -7,6 +7,8 @@ import zipfile
 from decimal import Decimal
 from typing import Any
 
+import requests
+
 from ..helpers.csv import clean_rows
 from ..helpers.http import http_get, http_get_json
 from ..helpers.math import decimal
@@ -42,7 +44,7 @@ def _csv_rows_from_bytes(data: bytes) -> list[dict[str, Any]]:
 # HTTP response unpacking (gzip/zip) and polymorphic parsing (CSV/JSON)
 # =============================================================================
 
-def _unpack_response_bytes(resp) -> tuple[bytes, str]:
+def _unpack_response_bytes(resp: requests.Response) -> tuple[bytes, str]:
     """
     Return (raw_bytes, effective_content_type) from an HTTP response.
     - Transparently gunzips if Content-Encoding: gzip
@@ -74,10 +76,10 @@ def _unpack_response_bytes(resp) -> tuple[bytes, str]:
     return raw, content_type
 
 
-def _fetch_pricesheet_rows_or_json(download_url: str) -> list[dict[str, Any]] | dict:
+def _fetch_pricesheet_rows_or_json(download_url: str) -> list[dict[str, Any]] | dict[str, Any]:
     """
     Fetch the price sheet from a SAS URL and return either:
-      - list[dict] (CSV normalized to rows), or
+      - list[dict[str, Any]] (CSV normalized to rows), or
       - dict/list (JSON passthrough if unknown shape; rows if list-of-dicts)
     """
     resp = http_get(download_url)
@@ -104,7 +106,7 @@ def _fetch_pricesheet_rows_or_json(download_url: str) -> list[dict[str, Any]] | 
 
 def _download_enterprise_prices(
     access_token: str, url: str, err_msg: str
-) -> list[dict[str, Any]] | dict:
+) -> list[dict[str, Any]] | dict[str, Any]:
     """
     Common flow:
       1) Call the CostManagement 'download' endpoint to get a short-lived SAS URL
@@ -121,7 +123,7 @@ def _download_enterprise_prices(
 
 def download_price_sheet_mca(
     access_token: str, billing_account_id: str
-) -> list[dict[str, Any]] | dict:
+) -> list[dict[str, Any]] | dict[str, Any]:
     """Download MCA price sheet rows."""
     url = (
         "https://management.azure.com/providers/Microsoft.Billing/"
@@ -137,7 +139,7 @@ def download_price_sheet_mca(
 
 def download_price_sheet_ea(
     access_token: str, enrollment_account_id: str
-) -> list[dict[str, Any]] | dict:
+) -> list[dict[str, Any]] | dict[str, Any]:
     """Download EA price sheet rows."""
     url = (
         "https://management.azure.com/providers/Microsoft.Billing/"
@@ -157,13 +159,13 @@ def download_price_sheet_ea(
 
 
 def enterprise_lookup(
-    ent: dict[Key, Decimal], service: str, sku: str, region: str, uom: str
+    ent: dict[Key, Decimal], service: str | None, sku: str | None, region: str, uom: str
 ) -> Decimal | None:
     """
     Lookup (service, sku, region, uom) in the enterprise price map.
     Falls back to regionless key if region is missing in sheet.
     """
-    if not ent:
+    if not ent or service is None or sku is None:
         return None
     with_region = (service, sku, region, uom)
     if with_region in ent:

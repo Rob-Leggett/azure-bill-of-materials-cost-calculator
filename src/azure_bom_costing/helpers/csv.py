@@ -54,7 +54,7 @@ def dedup_merge(lists: list[list[dict[str, Any]]]) -> list[dict[str, Any]]:
       1) meterId if present (globally unique)
       2) otherwise, a tuple of (serviceName, skuName, meterName, unitOfMeasure, armRegionName)
     """
-    seen: set = set()
+    seen: set[Any] = set()
     out: list[dict[str, Any]] = []
 
     for lst in lists:
@@ -86,7 +86,7 @@ def pick_first_dict(d: dict[str, Any], *keys: str) -> Any | None:
     return None
 
 
-def pick(items: list[dict], prefer_uom: str | None = None) -> dict | None:
+def pick(items: list[dict[str, Any]], prefer_uom: str | None = None) -> dict[str, Any] | None:
     """
     Pick the first positive-price row, preferring a given UOM if specified.
     (Kept for compatibility with existing callers.)

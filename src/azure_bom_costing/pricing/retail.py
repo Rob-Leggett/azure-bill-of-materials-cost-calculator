@@ -5,7 +5,8 @@ import json
 import os
 import re
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from typing import Any, cast
 from urllib.parse import quote as url_quote
 
 from ..helpers.csv import clean_rows
@@ -31,12 +32,11 @@ _DIR_RETAIL_TEMP = "retail"
 # Small helpers
 # =============================================================================
 
-def _acquire_lock(lock_path: str):
+def _acquire_lock(lock_path: str) -> int:
     """
     Best-effort file lock to avoid concurrent writers to the same temp dir.
     Returns the file descriptor to be closed on release.
     """
-    fd = None
     try:
         fd = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_RDWR)
         os.write(fd, str(os.getpid()).encode("utf-8"))
@@ -47,7 +47,7 @@ def _acquire_lock(lock_path: str):
         raise
 
 
-def _release_lock(fd, lock_path: str) -> None:
+def _release_lock(fd: int | None, lock_path: str) -> None:
     """Release the lock and remove the lock file."""
     try:
         if fd is not None:
@@ -59,19 +59,19 @@ def _release_lock(fd, lock_path: str) -> None:
             pass
 
 
-def _load_checkpoint(cp_path: str) -> dict:
+def _load_checkpoint(cp_path: str) -> dict[str, Any]:
     """
     Return checkpoint dict if present, else {}.
     Keys: next_link, page_no
     """
     try:
         with open(cp_path, encoding="utf-8") as f:
-            return json.load(f)
+            return cast(dict[str, Any], json.load(f))
     except Exception:
         return {}
 
 
-def _save_checkpoint(cp_path: str, data: dict) -> None:
+def _save_checkpoint(cp_path: str, data: dict[str, Any]) -> None:
     """Atomic checkpoint write."""
     tmp = f"{cp_path}.part"
     with open(tmp, "w", encoding="utf-8") as f:
@@ -81,7 +81,7 @@ def _save_checkpoint(cp_path: str, data: dict) -> None:
     os.replace(tmp, cp_path)
 
 
-def _has_positive_price(row: dict) -> bool:
+def _has_positive_price(row: dict[str, Any]) -> bool:
     """
     True if retailPrice or unitPrice is a valid positive number.
     (Useful when searching; not required to save pages.)
@@ -209,7 +209,7 @@ def download_retail_pages(
 _EQ_RE = re.compile(r"\s*(\w+)\s+eq\s+'([^']*)'\s*", re.IGNORECASE)
 _CONTAINS_RE = re.compile(r"\s*contains\(\s*(\w+)\s*,\s*'([^']*)'\s*\)\s*", re.IGNORECASE)
 
-def _parse_simple_filter(filter_expr: str) -> list[Callable[[dict], bool]]:
+def _parse_simple_filter(filter_expr: str) -> list[Callable[[dict[str, Any]], bool]]:
     """
     Tiny subset of OData $filter:
       - "field eq 'value'"
@@ -222,7 +222,8 @@ def _parse_simple_filter(filter_expr: str) -> list[Callable[[dict], bool]]:
 
     # Split by top-level " and "
     parts: list[str] = []
-    depth, buf = 0, []
+    depth = 0
+    buf: list[str] = []
     s = filter_expr
     i = 0
     while i < len(s):
@@ -241,24 +242,20 @@ def _parse_simple_filter(filter_expr: str) -> list[Callable[[dict], bool]]:
     if buf:
         parts.append("".join(buf).strip())
 
-    preds: list[Callable[[dict], bool]] = []
+    preds: list[Callable[[dict[str, Any]], bool]] = []
     for p in parts:
         m = _EQ_RE.fullmatch(p)
         if m:
             fld, val = m.group(1), m.group(2)
             val_l = val.lower()
-            preds.append(
-                lambda row, fld=fld, val_l=val_l: (str(row.get(fld) or "")).lower() == val_l
-            )
+            preds.append(_eq_pred(fld, val_l))
             continue
 
         m = _CONTAINS_RE.fullmatch(p)
         if m:
             fld, val = m.group(1), m.group(2)
             val_l = val.lower()
-            preds.append(
-                lambda row, fld=fld, val_l=val_l: val_l in (str(row.get(fld) or "")).lower()
-            )
+            preds.append(_contains_pred(fld, val_l))
             continue
 
         # Unknown clause → accept all (permissive)
@@ -267,7 +264,15 @@ def _parse_simple_filter(filter_expr: str) -> list[Callable[[dict], bool]]:
     return preds
 
 
-def _iter_saved_pages(temp_dir: str):
+def _eq_pred(fld: str, val_l: str) -> Callable[[dict[str, Any]], bool]:
+    return lambda row: str(row.get(fld) or "").lower() == val_l
+
+
+def _contains_pred(fld: str, val_l: str) -> Callable[[dict[str, Any]], bool]:
+    return lambda row: val_l in str(row.get(fld) or "").lower()
+
+
+def _iter_saved_pages(temp_dir: str) -> Iterator[dict[str, Any]]:
     """
     Yield raw JSON page dicts from temp_dir, ordered by page number.
     """
@@ -296,7 +301,7 @@ def _iter_saved_pages(temp_dir: str):
             continue
 
 
-def _iter_saved_items(temp_dir: str):
+def _iter_saved_items(temp_dir: str) -> Iterator[dict[str, Any]]:
     """
     Yield individual item dicts from all saved pages.
     """
@@ -310,7 +315,7 @@ def search_saved_retail_items(
         temp_dir: str = os.path.join(_DIR_EXAMPLES, _DIR_RETAIL_TEMP),
         *,
         require_positive_price: bool = False,
-) -> list[dict]:
+) -> list[dict[str, Any]]:
     """
     Search locally saved Retail JSON pages (no live API call).
 
@@ -324,7 +329,7 @@ def search_saved_retail_items(
     preds = _parse_simple_filter(filter_expr)
     cur = (currency or "").upper()
 
-    matched: list[dict] = []
+    matched: list[dict[str, Any]] = []
     for item in _iter_saved_items(temp_dir):
         # Currency filter
         if cur and (item.get("currencyCode") or "").upper() not in ("", cur):
@@ -347,7 +352,7 @@ def search_saved_retail_items(
 def retail_fetch_items_live(
         filter_expr: str,
         currency: str,
-) -> list[dict]:
+) -> list[dict[str, Any]]:
     """
     Fetch items directly from the Retail API (no temp files, no CSV).
     Useful if you just want in-memory rows.
@@ -356,7 +361,7 @@ def retail_fetch_items_live(
     session = get_session()
     session.headers.update({"Accept": "application/json"})
 
-    items: list[dict] = []
+    items: list[dict[str, Any]] = []
     seen_urls: set[str] = set()
     max_attempts, backoff = 4, 0.75
 

@@ -5,6 +5,7 @@ import json
 import logging
 import os
 from pathlib import Path
+from typing import Any
 
 from .helpers.auth import get_aad_token
 from .price_model import run_model
@@ -96,14 +97,15 @@ def _parse_args() -> argparse.Namespace:
     return ap.parse_args()
 
 
-def _load_bom(path: Path) -> dict:
+def _load_bom(path: Path) -> dict[str, Any]:
     """Load the BOM JSON from disk, exiting with code 2 on failure."""
     if not path.exists():
         logging.error("BOM file not found: %s", path)
         raise SystemExit(2)
     try:
         with path.open("r", encoding="utf-8") as f:
-            return json.load(f)
+            bom: dict[str, Any] = json.load(f)
+            return bom
     except Exception as e:
         logging.error("Failed to read BOM JSON (%s): %s", path, e)
         raise SystemExit(2) from e
@@ -128,9 +130,9 @@ def _maybe_get_aad_token(api_choice: str | None) -> str | None:
 
     try:
         token = get_aad_token(
-            os.getenv("AZ_TENANT_ID"),
-            os.getenv("AZ_CLIENT_ID"),
-            os.getenv("AZ_CLIENT_SECRET"),
+            os.environ["AZ_TENANT_ID"],
+            os.environ["AZ_CLIENT_ID"],
+            os.environ["AZ_CLIENT_SECRET"],
         )
         logging.info("Obtained AAD token for enterprise price sheet API: %s", api_choice.upper())
         return token

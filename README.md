@@ -19,10 +19,11 @@ This cost calculator ingests a **BOM (Bill of Materials)** describing your Azure
 
 ## 📦 Installation
 
+Requires **Python 3.13+** and [uv](https://docs.astral.sh/uv/).
+
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate     # Windows: .venv\Scripts\activate
-pip install -e '.[dev]'
+uv sync                       # creates .venv and installs the app + dev tools from uv.lock
+source .venv/bin/activate     # Windows: .venv\Scripts\activate (or prefix commands with `uv run`)
 ```
 
 ---
@@ -267,15 +268,21 @@ examples/
 ## 🛠️ Development
 
 ```bash
-# Install dev dependencies
-pip install -e '.[dev]'
+# Install app + dev dependencies
+uv sync
 
 # Run linter
-ruff check src/
+uv run ruff check .
 
 # Run type checker
-mypy src/
+uv run mypy src tests
 
 # Run tests
-pytest
+uv run pytest
+
+# Audit dependencies for known vulnerabilities
+uv run pip-audit
+
+# Upgrade all dependencies to their latest versions
+uv lock --upgrade && uv sync
 ```

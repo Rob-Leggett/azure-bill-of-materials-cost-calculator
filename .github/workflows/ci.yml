@@ -1,16 +1,30 @@
 name: CI
 on:
   push:
+    branches: [main]
+    paths-ignore: ['**/*.md', 'docs/**', 'wiki/**']
   pull_request:
+    paths-ignore: ['**/*.md', 'docs/**', 'wiki/**']
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.2
         with:
-          python-version: '3.11'
-      - run: pip install -e .[dev]
-      - run: ruff check .
-      - run: mypy src
-      - run: pytest --maxfail=1 --disable-warnings -q
+          python-version: '3.13'
+          enable-cache: true
+      - run: uv sync --locked
+      - run: uv run ruff check .
+      - run: uv run mypy src tests
+      - run: uv run pytest --maxfail=1 -q
+      - run: uv run pip-audit
