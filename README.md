@@ -1,5 +1,7 @@
 # Azure Bill of Materials Cost Calculator
 
+[![CI](https://github.com/Rob-Leggett/azure-bill-of-materials-cost-calculator/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Rob-Leggett/azure-bill-of-materials-cost-calculator/actions/workflows/ci.yml) [![Python 3.13](https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+
 BOM-driven Azure Cost Calculator supporting both **Standard** (Retail API) and **Enterprise** (MCA/EA) pricing tiers.
 
 ---
